@@ -1,10 +1,25 @@
 import ldap
 
+#vars
+#ad_server = 'ldap://'your_ip_or_fqdn':389'
+ad_server = "ldaps://'your_ip_or_fqdn':636"
+
+user_name = ''samaccoutname''
+user_pwd = 'LZahxNXRI2TFg2X'
+
 try:
-    lconn = ldap.initialize('ldap://dc1.your_domain:389')
-    lconn.protocol_version = ldap.VERSION3
-    lconn.set_option(ldap.OPT_REFERRALS, 0)
-    lconn.simple_bind_s(''your_login_here'', ''your_password_here'')
-    print("Connected user!")
-except ldap.SERVER_DOWN:
-    print("Error connection to AD")
+    # Force cert validation
+    ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+    # LDAP connection initialization
+    l = ldap.initialize(ad_server)
+    l.set_option(ldap.OPT_REFERRALS, 0)
+    # Set LDAP protocol version used
+    l.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+    l.set_option(ldap.OPT_X_TLS, ldap.OPT_X_TLS_DEMAND)
+    l.set_option(ldap.OPT_X_TLS_DEMAND, True)
+    l.set_option(ldap.OPT_DEBUG_LEVEL, 255)
+    # Bind (as admin user)
+    l.simple_bind_s(user_name, user_pwd)
+    print("Connected!")
+except Exception as ex:
+    print(ex)
