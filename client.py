@@ -5,7 +5,7 @@ import ldap
 ad_server = "ldaps://'your_ip_or_fqdn':636"
 
 user_name = ''samaccoutname''
-user_pwd = 'LZahxNXRI2TFg2X'
+user_pwd = ''your_password_here'45'
 
 try:
     # Force cert validation
@@ -20,6 +20,8 @@ try:
     l.set_option(ldap.OPT_DEBUG_LEVEL, 255)
     # Bind (as admin user)
     l.simple_bind_s(user_name, user_pwd)
-    print("Connected!")
+    print("Client connected!")
+    # Close connection
+    l.unbind_s()
 except Exception as ex:
     print(ex)
