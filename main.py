@@ -53,7 +53,7 @@ def change_password():
     # Now, perform the password update
     newpwd_utf16 = '"{0}"'.format(new_user_pwd).encode('utf-16-le')
     mod_list = [(ldap.MOD_REPLACE, "unicodePwd", newpwd_utf16),]
-    l.modify_s(user_dn.format(username), mod_list)
+    l.modify_s(user_dn.format(user_name), mod_list)
 
 # Close connection
 def close_ldap_session():

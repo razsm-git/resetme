@@ -1,11 +1,9 @@
 import ldap
+from secret import *
 
 #vars
 #ad_server = 'ldap://'your_ip_or_fqdn':389'
 ad_server = "ldaps://'your_ip_or_fqdn':636"
-
-user_name = ''samaccoutname''
-user_pwd = ''your_password_here'45'
 
 try:
     # Force cert validation
