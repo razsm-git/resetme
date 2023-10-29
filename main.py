@@ -1,5 +1,5 @@
 import ldap
-
+from secret import *
 #vars
 #ad_server = 'ldap://'your_ip_or_fqdn':389'
 ad_server = "ldaps://'your_ip_or_fqdn':636"
@@ -14,14 +14,6 @@ retrieve_attributes = ["mobile","mail","cn"]
 #This searchFilter needs to be more specific
 samaccoutname = ''samaccoutname''
 search_filter = f'(&(sAMAccountName={samaccoutname})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
-
-
-#admin_username = 's_resetme@your_domain'
-admin_username = "'your_login_here'"
-admin_password = "'passwod'"
-
-username = ''samaccoutname''
-new_user_pwd = ''your_password_here'45'
 
 
 def ldap_connect():
