@@ -1,0 +1,18 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Страница сброса пароля</title>
+</head>
+<body>
+    <h2>Введите Ваш логин</h2>
+    <div class="form-row">
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="Submit" name="submit" value="Далее"/>
+    </form>
+
+    {% if submitbutton == "Далее" %}
+        <h1>Your first name is {{ username }}</h1>
+    {% endif %}
+    </div>
+</body>
