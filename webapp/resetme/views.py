@@ -15,5 +15,6 @@ def index(request):
             username = form.cleaned_data.get("username")
         
         context= {'form': form, 'username': username, 'submitbutton': submitbutton}
+        print(f"Hello {username}")
         
         return render(request, 'index.html', context)

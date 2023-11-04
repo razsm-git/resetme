@@ -20,4 +20,5 @@ from django.urls import include, path
 urlpatterns = [
     path("resetme/", include("resetme.urls")),
     path('admin/', admin.site.urls),
+    path('captcha/', include('captcha.urls')),
 ]
