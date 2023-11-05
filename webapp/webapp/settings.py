@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from os import sys
+sys.path.append("/root/resetme")
+from secret import *
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'captcha',
+    'smsru',
 ]
 
 MIDDLEWARE = [
@@ -127,3 +131,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
 CAPTCHA_FONT_SIZE = 65
 CAPTCHA_TIMEOUT = 1
+
+#sms.ru
+SMS_RU = {
+    "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
+    "TEST": True, # отправка смс в тестовом режиме, по умолчанию False
+    "SENDER": 'your_login_here', # отправитель - необязательно поле
+}
