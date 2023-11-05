@@ -136,5 +136,5 @@ CAPTCHA_TIMEOUT = 1
 SMS_RU = {
     "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
     "TEST": True, # отправка смс в тестовом режиме, по умолчанию False
-    "SENDER": 'your_login_here', # отправитель - необязательно поле
+    #"SENDER": 'your_login_here', # отправитель - необязательно поле
 }

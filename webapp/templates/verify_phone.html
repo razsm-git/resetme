@@ -10,5 +10,8 @@
         {{ form.as_p }}
         <input type="Submit" name="submit" value="Далее"/>
     </form>
+    {% if code_error %}
+            <h1>{{ code_error }}</h1>
+    {% endif %}
     </div>
 </body>
