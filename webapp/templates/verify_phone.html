@@ -1,0 +1,14 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Верификация пользователя</title>
+</head>
+<body>
+    <h2>Введите код подтверждения, направленный Вам на корпоративнй номер телефона в виде смс сообщения.</h2>
+    <div class="form-row">
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="Submit" name="submit" value="Далее"/>
+    </form>
+    </div>
+</body>
