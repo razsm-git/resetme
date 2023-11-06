@@ -9,7 +9,7 @@ from random import choice, shuffle
 import psycopg2
 import ldap
 from secret import admin_username, admin_password
-from vars import ad_server, user_dn, base_dn, retrieve_attributes, samaccoutname, search_filter
+from vars import ad_server, user_dn, base_dn, retrieve_attributes
 
 
 def index(request):
@@ -31,6 +31,7 @@ def index(request):
     
 def check_ldap_user(username):
     search_scope = ldap.SCOPE_SUBTREE
+    search_filter = f'(&(sAMAccountName={username})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
     def ldap_connect():
         try:
             # Force cert validation
@@ -54,12 +55,22 @@ def check_ldap_user(username):
     # Check user status in LDAP (enabled or disabled)
     def check_user():
         ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
-        cn = ldap_check_user[0][-1]['cn'][0].decode('UTF-8')
-        mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
-        mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
-        givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
-        distinguishedName = ldap_check_user[0][-1]['distinguishedName'][0].decode('UTF-8')
-        print(cn, mobile, mail, givenName, distinguishedName)
+        if ldap_check_user:
+            status = 0
+        else:
+            status = 1
+        try:
+            cn = ldap_check_user[0][-1]['cn'][0].decode('UTF-8')
+            mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
+            mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+            givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
+            distinguishedName = ldap_check_user[0][-1]['distinguishedName'][0].decode('UTF-8')
+            result = {"mobile": mobile, "mail": mail, "cn": cn, "distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
+            return result
+        except Exception as ex:
+            result = {'status': status}
+            return result
+        #print(cn, mobile, mail, givenName, distinguishedName)
 
     # Close connection
     def close_ldap_session():
@@ -67,10 +78,12 @@ def check_ldap_user(username):
 
     # Run script
     ldap_connect()
-    check_user()
+    res = check_user()
     close_ldap_session()
     #return
     # Дописать словарь возврата со статусом, для анализа в функции index()
+    return res
+    
 
 def generate_code():
     numbers = ['1','2','3','4','5','6','7','8','9']

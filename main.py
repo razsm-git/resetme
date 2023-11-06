@@ -12,7 +12,7 @@ search_scope = ldap.SCOPE_SUBTREE
 #retrieve Certain attributes
 retrieve_attributes = ["mobile","mail","cn"]
 #This searchFilter needs to be more specific
-samaccoutname = ''samaccoutname''
+samaccoutname = ''samaccoutname'1'
 search_filter = f'(&(sAMAccountName={samaccoutname})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
 
 
@@ -39,6 +39,12 @@ def ldap_connect():
 # Check user status in LDAP (enabled or disabled)
 def check_user():
     ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
+    if ldap_check_user:
+        print('yes')
+    else:
+        print('no')
+    print(ldap_check_user)
+    print(type(ldap_check_user))
     cn = ldap_check_user[0][-1]['cn'][0].decode('UTF-8')
     mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
     mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
