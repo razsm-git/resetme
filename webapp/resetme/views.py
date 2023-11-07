@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
-from .forms import UserForm, VerifyPhone
+from django.forms import ModelForm
+from .forms import UserForm, VerifyPhone, Domain
+from resetme.models import domain
 from re import search
 from smsru.service import SmsRuApi
 # For generate randoom sms code
@@ -20,14 +22,35 @@ def index(request):
     form = UserForm(request.POST or None)
     if form.is_valid():
         username = form.cleaned_data.get("username")
-        #check_ldap_user(username)
-        #if else
-        #запускаем проверку имени пользователя в ldap и получаем его данные
-        context = {'form': form, 'submitbutton': submitbutton}
-        return redirect("verify")
+        #check_username = check_ldap_user(username)
+        context = {'form': form, 'submitbutton': submitbutton, 'username': username}
+        domain_choise(request, username)
+        return redirect("domain")
+        #return render(request, 'domain_choise.html', context)
+    #     if check_username['status'] == 0:
+    #         # User exist and ready for verify phone by sms code
+    #         context = {'form': form, 'submitbutton': submitbutton}
+    #         return redirect("verify")
     else:
         context = {'form': form}
         return render(request, 'index.html', context)
+    
+def domain_choise(request):
+    submitbutton = request.POST.get("submit")
+    domain = ''
+    class DomainForm(ModelForm):
+        class Meta:
+            model = domain
+            fields = ["domain"]
+    form = DomainForm(request.POST or None)
+    if form.is_valid():
+        domain = form.cleaned_data.get("domain")
+        context = {'form': form, 'submitbutton': submitbutton,'domain': domain}
+        return render(request, 'domain_choise.html', context)
+    else:
+        form = DomainForm()
+        context = {'form': form}
+        return render(request, 'domain_choise.html', context)
     
 def check_ldap_user(username):
     search_scope = ldap.SCOPE_SUBTREE
@@ -56,21 +79,22 @@ def check_ldap_user(username):
     def check_user():
         ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
         if ldap_check_user:
+            # If user exists and enabled in LDAP
             status = 0
+            try:
+                mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
+                mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+                givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
+                distinguishedName = ldap_check_user[0][0]
+                result = {"mobile": mobile, "mail": mail, "distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
+                return result
+            except Exception as ex:
+                status = 2
+                result = {'status': status}
+                return result
         else:
+            # If user not exists or disabled in LDAP
             status = 1
-        try:
-            cn = ldap_check_user[0][-1]['cn'][0].decode('UTF-8')
-            mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
-            mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
-            givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
-            distinguishedName = ldap_check_user[0][-1]['distinguishedName'][0].decode('UTF-8')
-            result = {"mobile": mobile, "mail": mail, "cn": cn, "distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
-            return result
-        except Exception as ex:
-            result = {'status': status}
-            return result
-        #print(cn, mobile, mail, givenName, distinguishedName)
 
     # Close connection
     def close_ldap_session():

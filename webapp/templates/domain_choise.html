@@ -1,0 +1,15 @@
+<head>
+    <meta charset="UTF-8">
+    <title>Выберите домен</title>
+</head>
+<body>
+    <h2>Выберите домен из списка.</h2>
+    <div class="form-row">
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="Submit" name="submit" value="Далее"/>
+    </form>
+    <h1>Имя пользовтеля {{ username }}, домен {{ domain }}</h1>
+    </div>
+</body>

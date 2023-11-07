@@ -11,3 +11,6 @@ class UserForm(forms.Form):
 class VerifyPhone(forms.Form):
     code = forms.DecimalField(required=True, label="Код подтверждения:",max_digits=6, validators=[RegexValidator(
         '^[0-9]*$', message="Это не код подтверждения. Не пытайся хитрить.")], error_messages={'invalid': 'Вы ввели неверный ответ!', 'max_digits': 'Код не должен быть длинее 6 цифр'})
+    
+class Domain(forms.Form):
+    pass
