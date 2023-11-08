@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.forms import ModelForm
-from .forms import UserForm, VerifyPhone, Domain
+from .forms import UserForm, VerifyPhone, DomainForm
 from resetme.models import domain
+from django.db import models
 from re import search
 from smsru.service import SmsRuApi
 # For generate randoom sms code
@@ -38,19 +39,18 @@ def index(request):
 def domain_choise(request):
     submitbutton = request.POST.get("submit")
     domain = ''
-    class DomainForm(ModelForm):
-        class Meta:
-            model = domain
-            fields = ["domain"]
-    form = DomainForm(request.POST or None)
-    if form.is_valid():
-        domain = form.cleaned_data.get("domain")
-        context = {'form': form, 'submitbutton': submitbutton,'domain': domain}
-        return render(request, 'domain_choise.html', context)
-    else:
-        form = DomainForm()
-        context = {'form': form}
-        return render(request, 'domain_choise.html', context)
+    # form = DomainForm(request.POST or None)
+    # if form.is_valid():
+    #     domain = form.cleaned_data.get("domain")
+    #     context = {'form': form, 'submitbutton': submitbutton,'domain': domain}
+    #     return render(request, 'domain_choise.html', context)
+    # else:
+    #     form = DomainForm()
+    #     context = {'form': form}
+    #     return render(request, 'domain_choise.html', context)
+    form = DomainForm()
+    context = {'form': form}
+    return render(request, 'domain_choise.html', context)
     
 def check_ldap_user(username):
     search_scope = ldap.SCOPE_SUBTREE
