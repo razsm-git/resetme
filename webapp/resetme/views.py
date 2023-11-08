@@ -12,7 +12,7 @@ from random import choice, shuffle
 import psycopg2
 import ldap
 from secret import admin_username, admin_password
-from vars import ad_server, user_dn, base_dn, retrieve_attributes
+from vars import var_your_domain, var_volhovez_local
 
 
 def index(request):
@@ -23,36 +23,49 @@ def index(request):
     form = UserForm(request.POST or None)
     if form.is_valid():
         username = form.cleaned_data.get("username")
-        #check_username = check_ldap_user(username)
         context = {'form': form, 'submitbutton': submitbutton, 'username': username}
-        domain_choise(request, username)
+        request.session['data'] = {'username': username}
         return redirect("domain")
-        #return render(request, 'domain_choise.html', context)
-    #     if check_username['status'] == 0:
-    #         # User exist and ready for verify phone by sms code
-    #         context = {'form': form, 'submitbutton': submitbutton}
-    #         return redirect("verify")
+        #return render(request, 'domain_choice.html', context)
     else:
         context = {'form': form}
         return render(request, 'index.html', context)
     
-def domain_choise(request):
-    submitbutton = request.POST.get("submit")
-    domain = ''
-    # form = DomainForm(request.POST or None)
-    # if form.is_valid():
-    #     domain = form.cleaned_data.get("domain")
-    #     context = {'form': form, 'submitbutton': submitbutton,'domain': domain}
-    #     return render(request, 'domain_choise.html', context)
-    # else:
-    #     form = DomainForm()
-    #     context = {'form': form}
-    #     return render(request, 'domain_choise.html', context)
-    form = DomainForm()
-    context = {'form': form}
-    return render(request, 'domain_choise.html', context)
+def domain_choice(request):
+    if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
+        submitbutton = request.POST.get("submit")
+        domain = ''
+        form = DomainForm(request.POST or None)
+        if form.is_valid():
+            domain = form.cleaned_data.get("domain")
+            username = request.session.get('data', None)['username']
+            context = {'form': form, 'submitbutton': submitbutton}
+            if domain == 'your_domain':
+                check_username = check_ldap_user(username, var_your_domain)
+            elif domain == 'your_domain':
+                check_username = check_ldap_user(username, var_volhovez_local)
+            #print(check_username)
+            if check_username['status'] == 0:
+            # User exist and ready for verify phone by sms code
+                context = {'form': form, 'submitbutton': submitbutton}
+                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain}
+                return redirect("verify")
+            elif check_username['status'] == 1:
+                error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'
+                context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+            elif check_username['status'] == 2:
+                error_message = 'Для того, чтобы верифицировать Вас, нехватает данных или они не верны. Обратитесь в отдел ИТ.'
+                context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+            return render(request, 'domain_choice.html', context)
+        else:
+            form = DomainForm()
+            context = {'form': form}
+            return render(request, 'domain_choice.html', context)
+    else:
+        return HttpResponseForbidden("Forbidden")
     
-def check_ldap_user(username):
+def check_ldap_user(username, domain):
+    ad_server = domain['ad_server']
     search_scope = ldap.SCOPE_SUBTREE
     search_filter = f'(&(sAMAccountName={username})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
     def ldap_connect():
@@ -77,16 +90,20 @@ def check_ldap_user(username):
 
     # Check user status in LDAP (enabled or disabled)
     def check_user():
+        base_dn = domain['base_dn']
+        retrieve_attributes = domain['retrieve_attributes']
         ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
         if ldap_check_user:
             # If user exists and enabled in LDAP
             status = 0
             try:
-                mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
-                mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+                mobile = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+                print(mobile)
                 givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
+                print(givenName)
                 distinguishedName = ldap_check_user[0][0]
-                result = {"mobile": mobile, "mail": mail, "distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
+                print(distinguishedName)
+                result = {"mobile": mobile,"distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
                 return result
             except Exception as ex:
                 status = 2
@@ -95,6 +112,8 @@ def check_ldap_user(username):
         else:
             # If user not exists or disabled in LDAP
             status = 1
+            result = {'status': status}
+            return result
 
     # Close connection
     def close_ldap_session():
@@ -104,8 +123,6 @@ def check_ldap_user(username):
     ldap_connect()
     res = check_user()
     close_ldap_session()
-    #return
-    # Дописать словарь возврата со статусом, для анализа в функции index()
     return res
     
 
@@ -152,6 +169,7 @@ def verify_phone(request):
 
 def success(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
-        return render(request, 'success.html')
+        result = request.session.get('data', None)
+        return render(request, 'success.html', context=result)
     else:
         return HttpResponseForbidden("Forbidden")

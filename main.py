@@ -12,7 +12,7 @@ search_scope = ldap.SCOPE_SUBTREE
 #retrieve Certain attributes
 retrieve_attributes = ["mobile","mail","cn", "givenName"]
 #This searchFilter needs to be more specific
-samaccoutname = ''samaccoutname''
+samaccoutname = 'reset'
 search_filter = f'(&(sAMAccountName={samaccoutname})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
 
 
@@ -46,8 +46,8 @@ def check_user():
     print(ldap_check_user)
     print(type(ldap_check_user))
     cn = ldap_check_user[0][-1]['cn'][0].decode('UTF-8')
-    mobile = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
-    mail = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+    mobile = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+    mail = ldap_check_user[0][-1]['mail'][0].decode('UTF-8')
     givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
     print(cn, mobile, mail, givenName)
 

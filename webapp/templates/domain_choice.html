@@ -10,6 +10,8 @@
         {{ form.as_p }}
         <input type="Submit" name="submit" value="Далее"/>
     </form>
-    <h1>Имя пользовтеля {{ username }}, домен {{ domain }}</h1>
+    {% if error_message %}
+            <h1>{{ error_message }}</h1>
+    {% endif %}
     </div>
 </body>
