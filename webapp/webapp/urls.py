@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from .views import redirect_to_resetme
 
 urlpatterns = [
+    path('', redirect_to_resetme),
     path("resetme/", include("resetme.urls")),
     path('admin/', admin.site.urls),
     path('captcha/', include('captcha.urls')),

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.forms import ModelForm
-from .forms import UserForm, VerifyPhone, DomainForm
+from .forms import UserForm, VerifyPhone, DomainForm, ChangePassword
 from resetme.models import domain
 from django.db import models
 from re import search
@@ -12,7 +12,11 @@ from random import choice, shuffle
 import psycopg2
 import ldap
 from secret import admin_username, admin_password
-from vars import var_your_domain, var_volhovez_local
+from vars import var_your_domain, var_volhovez_local, sms_login, sms_password
+import requests
+from django.core.exceptions import ValidationError
+from re import findall
+#from django.utils.translation import ugettext as _
 
 
 def index(request):
@@ -49,7 +53,9 @@ def domain_choice(request):
             # User exist and ready for verify phone by sms code
                 context = {'form': form, 'submitbutton': submitbutton}
                 request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain}
-                return redirect("verify")
+                # Временно перенаправлю на ввод пароля
+                #return redirect("verify")
+                return redirect("password")
             elif check_username['status'] == 1:
                 error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'
                 context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
@@ -133,7 +139,7 @@ def generate_code():
     random_code = ''.join([choice(numbers) for n in range(6)])
     with open('db.txt', 'w') as db:
         db.write(random_code)
-    #return random_code
+    return random_code
     
 def verify_phone(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
@@ -143,8 +149,8 @@ def verify_phone(request):
             form = VerifyPhone(request.POST or None)
             if form.is_valid():
                 code = form.cleaned_data.get("code")
-                with open('db.txt', 'r') as db:
-                    send_code = db.readlines()[-1].strip('\n')
+                # with open('db.txt', 'r') as db:
+                #     send_code = db.readlines()[-1].strip('\n')
                 if int(send_code) == int(code):
                     context = {'form': form, 'submitbutton': submitbutton}
                     return redirect("success")
@@ -152,20 +158,66 @@ def verify_phone(request):
                     context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
                     return render(request, 'verify_phone.html', context)
         elif request.method == 'GET':
-            # # Send code by sms
-            generate_code()
-            # print(f'Отправленный код: {send_code}')
-            # print(type(int(send_code)))
-            # api = SmsRuApi()
-            # #Тут необходимо подставить данные из ldap и сгенерировать случайный код
-            # result = api.send_one_sms("+79110400598", random_code)
-            # print(result)
+            # Generate random code
+            send_code = generate_code()
+            print(f'Отправленный код: {send_code}')
+            # Send code by sms
+            mobile = request.session.get('data', None)['mobile']
+            status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
             form = VerifyPhone()
             context = {'form': form}
             return render(request, 'verify_phone.html', context)
     else:
         return HttpResponseForbidden("Forbidden")
 
+def send_code_by_sms(login, password, phone, code):
+    req = requests.get(f"https://smsc.ru/sys/send.php?login={login}&psw={password}&phones={phone}&mes={code}")
+    return req.status_code
+
+def change_password(request):
+    if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
+        data = request.session.get('data', None)
+        if request.method == 'POST':
+            submitbutton = request.POST.get("submit")
+            # password = ''
+            # confirm_password = ''
+            form = ChangePassword(request.POST or None)
+            if form.is_valid():
+                # password = form.cleaned_data.get("new_password")
+                # confirm_password = form.cleaned_data.get("confirm_new_password")
+                if form.cleaned_data.get("new_password") != form.cleaned_data.get("confirm_new_password"):
+                    error_message = 'Введенные пароли не совпадают!'
+                    context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+                    return render(request, 'change_password.html', context)
+                else:
+                    error_message_class = PasswordValidator()
+                    error_message = error_message_class.validate(password=form.cleaned_data.get("new_password"), username=data['username'],domain=data['domain'])
+                    if error_message:
+                        context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+                        return render(request, 'change_password.html', context)
+                    else:
+                        return redirect("success")
+                        #return redirect("success")
+            
+        elif request.method == 'GET':
+            form = ChangePassword()
+            context = {'form': form}
+            return render(request, 'change_password.html', context)
+    else:
+        return HttpResponseForbidden("Forbidden")
+    
+class PasswordValidator(object):
+    def validate(self, password, username, domain):
+        if not findall('[A-Z]', password):
+            return "Пароль должен содержать заглавные латинские буквы."
+        elif not findall('[a-z]', password):
+            return "Пароль должен содержать строчные латинские буквы."
+        elif not findall('[0-9]', password):
+            return "Пароль должен содержать цифры"
+        elif len(password) < 8:
+            return "Длина пароля должна быть больше либо равна 8 символам!"
+        # Проверка истории паролей из базы данных
+        #elif 
 
 def success(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):

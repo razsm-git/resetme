@@ -12,8 +12,13 @@ class UserForm(forms.Form):
 class VerifyPhone(forms.Form):
     code = forms.DecimalField(required=True, label="Код подтверждения:",max_digits=6, validators=[RegexValidator(
         '^[0-9]*$', message="Это не код подтверждения. Не пытайся хитрить.")], error_messages={'invalid': 'Вы ввели неверный ответ!', 'max_digits': 'Код не должен быть длинее 6 цифр'})
-    
+
+# Import from model    
 class DomainForm(ModelForm):
         class Meta:
             model = domain
             fields = ["domain"]
+
+class ChangePassword(forms.Form):
+     new_password = forms.CharField(required=True, label="Введите пароль:", widget=forms.PasswordInput)
+     confirm_new_password = forms.CharField(required=True, label="Подтверждение пароля:", widget=forms.PasswordInput)
