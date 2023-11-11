@@ -11,6 +11,9 @@ class user(models.Model):
     send_code = models.IntegerField(validators=[RegexValidator(r'^[0-9]{6}$')])
     status = models.CharField(max_length=100)
     created_at = models.DateTimeField(default=datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    hash = ''
+    salt = ''
+    domain = ''
 
 
 class domain(models.Model):
