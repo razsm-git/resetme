@@ -1,22 +1,26 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
-from django.forms import ModelForm
+#from django.forms import ModelForm
 from .forms import UserForm, VerifyPhone, DomainForm, ChangePassword
-from resetme.models import domain
-from django.db import models
+#from resetme.models import domain
+#from django.db import models
 from re import search
-from smsru.service import SmsRuApi
+#from smsru.service import SmsRuApi
 # For generate randoom sms code
 from random import choice, shuffle
 # For postgresql
 import psycopg2
 import ldap
 from secret import admin_username, admin_password
-from vars import var_your_domain, var_volhovez_local, sms_login, sms_password
+from vars import var_your_domain, var_volhovez_local, sms_login, sms_password, algoritm, coding, iter, dklen, urandom_bytes, conditions
 import requests
-from django.core.exceptions import ValidationError
+#from django.core.exceptions import ValidationError
 from re import findall
 #from django.utils.translation import ugettext as _
+from os import urandom
+import hashlib
+from resetme.models import user
+from datetime import datetime, date
 
 
 def index(request):
@@ -153,7 +157,7 @@ def verify_phone(request):
                 #     send_code = db.readlines()[-1].strip('\n')
                 if int(send_code) == int(code):
                     context = {'form': form, 'submitbutton': submitbutton}
-                    return redirect("success")
+                    return redirect("password")
                 else:
                     context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
                     return render(request, 'verify_phone.html', context)
@@ -191,33 +195,73 @@ def change_password(request):
                     return render(request, 'change_password.html', context)
                 else:
                     error_message_class = PasswordValidator()
-                    error_message = error_message_class.validate(password=form.cleaned_data.get("new_password"), username=data['username'],domain=data['domain'])
+                    error_message = error_message_class.validate(password=form.cleaned_data.get("new_password"), username=data['username'],domain=data['domain'], conditions=conditions, model_user=user)                    
                     if error_message:
                         context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
                         return render(request, 'change_password.html', context)
                     else:
+                        hash = hash_salt(form.cleaned_data.get("new_password"))
+                        user_data = user.objects.create(
+                            username = data['username'],
+                            first_name = data['givenName'],
+                            phone = data['mobile'],
+                            status = 'Password changed',
+                            created_at = datetime.now(),
+                            hash = hash['hash'],
+                            salt = hash['salt'],
+                            domain = data['domain'],
+                        )
                         return redirect("success")
-                        #return redirect("success")
-            
         elif request.method == 'GET':
             form = ChangePassword()
             context = {'form': form}
             return render(request, 'change_password.html', context)
     else:
         return HttpResponseForbidden("Forbidden")
-    
+
+def hash_salt(password):
+    salt = urandom(urandom_bytes)
+    hash = hashlib.pbkdf2_hmac(algoritm, password.encode(coding),salt, iter, dklen=dklen)
+    return {'salt': salt,'hash': hash}
+
+def hash_unsalt(password, hash, salt, algoritm, iter, dklen):
+    new_hash = hashlib.pbkdf2_hmac(algoritm,password.encode(coding), bytes(salt), iter, dklen=dklen)
+    if new_hash == bytes(hash):
+        return {'err_code': 1, 'err_msg': "Пароль уже использовался Вами ранее. Введите другой пароль"}
+    else:
+        return {'err_code': 0}
+
 class PasswordValidator(object):
-    def validate(self, password, username, domain):
-        if not findall('[A-Z]', password):
+    def validate(self, password, username, domain, conditions, model_user):
+        if not findall(conditions['upper'], password):
             return "Пароль должен содержать заглавные латинские буквы."
-        elif not findall('[a-z]', password):
+        elif not findall(conditions['lower'], password):
             return "Пароль должен содержать строчные латинские буквы."
-        elif not findall('[0-9]', password):
+        elif not findall(conditions['number'], password):
             return "Пароль должен содержать цифры"
         elif len(password) < 8:
             return "Длина пароля должна быть больше либо равна 8 символам!"
-        # Проверка истории паролей из базы данных
-        #elif 
+        # Below requests to DB
+        else:
+            sl = conditions['history']
+            today_date = date.today().isoformat()
+            # queryset for chache
+            model_user.objects.filter(username=username, domain=domain)
+            # the same query
+            history_of_change = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[:sl]
+            today_changed = model_user.objects.filter(username=username, domain=domain, created_at__contains=today_date)
+            print("Это запрос today_changed.count:")
+            if today_changed.count() >= conditions['change_per_day']:
+                return "Замечена подозрительная активность с участием вашего аккаунта. обратитесь в отдел ИТ для изменения пароля."
+            ###queryset = model_user.objects.filter(username=username).filter(domain=domain).filter(created_at__gte='2023-01-01').values()
+            #queryset = model_user.objects.filter(username=username, domain=domain).values_list('hash')
+            print(f"Это запрос history: {history_of_change}")
+            for entry in history_of_change:
+                print({'hash': entry.hash, 'salt': entry.salt})
+                comparison = hash_unsalt(password, entry.hash, entry.salt, algoritm, iter, dklen)
+                if comparison['err_code'] == 1:
+                    return comparison['err_msg']
+                
 
 def success(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):

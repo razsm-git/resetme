@@ -2,7 +2,7 @@ from django import forms
 from django.core.validators import RegexValidator, MinLengthValidator
 from captcha.fields import CaptchaField
 from django.forms import ModelForm
-from resetme.models import domain
+from resetme.models import user
 
 class UserForm(forms.Form):
     username = forms.CharField(required=True, label = "Логин:", max_length=9, strip=True, validators=[RegexValidator(
@@ -15,10 +15,13 @@ class VerifyPhone(forms.Form):
 
 # Import from model    
 class DomainForm(ModelForm):
-        class Meta:
-            model = domain
-            fields = ["domain"]
+    class Meta:
+        model = user
+        fields = ["domain"]
 
 class ChangePassword(forms.Form):
      new_password = forms.CharField(required=True, label="Введите пароль:", widget=forms.PasswordInput)
      confirm_new_password = forms.CharField(required=True, label="Подтверждение пароля:", widget=forms.PasswordInput)
+
+
+# используется ли help_text ? или только в моделях?
