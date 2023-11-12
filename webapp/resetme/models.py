@@ -19,6 +19,11 @@ class user(models.Model):
 ]
     domain = models.CharField(verbose_name="Выберите домен из списка:", max_length=14, choices=domain_list, default='your_domain')
 
+class sms_code(models.Model):
+    session_id = models.CharField()
+    send_code = models.CharField(max_length=6,validators=[RegexValidator(r'^[0-9]{6}$')])
+    created_at = models.DateTimeField(default=datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    status = models.CharField(max_length=100)
 
 # class domain(models.Model):
 #     # First element save in DB, second element view in form field

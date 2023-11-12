@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponseForbidden
 #from django.forms import ModelForm
 from .forms import UserForm, VerifyPhone, DomainForm, ChangePassword
 #from resetme.models import domain
@@ -8,24 +8,21 @@ from re import search
 #from smsru.service import SmsRuApi
 # For generate randoom sms code
 from random import choice, shuffle
-# For postgresql
-import psycopg2
+#import psycopg2
 import ldap
 from secret import admin_username, admin_password
-from vars import var_your_domain, var_volhovez_local, sms_login, sms_password, algoritm, coding, iter, dklen, urandom_bytes, conditions
+from vars import var_your_domain, var_volhovez_local, sms_login, sms_password, algoritm, coding, iter, dklen, urandom_bytes, conditions, count_of_fails_code_threshold
 import requests
 #from django.core.exceptions import ValidationError
 from re import findall
 #from django.utils.translation import ugettext as _
 from os import urandom
 import hashlib
-from resetme.models import user
+from resetme.models import user, sms_code
 from datetime import datetime, date
 
 
 def index(request):
-    #return HttpResponse("Hello, world. You're at the resetme index.")
-    #return render(request, 'index.html')
     submitbutton = request.POST.get("submit")
     username = ''
     form = UserForm(request.POST or None)
@@ -34,7 +31,6 @@ def index(request):
         context = {'form': form, 'submitbutton': submitbutton, 'username': username}
         request.session['data'] = {'username': username}
         return redirect("domain")
-        #return render(request, 'domain_choice.html', context)
     else:
         context = {'form': form}
         return render(request, 'index.html', context)
@@ -52,14 +48,13 @@ def domain_choice(request):
                 check_username = check_ldap_user(username, var_your_domain)
             elif domain == 'your_domain':
                 check_username = check_ldap_user(username, var_volhovez_local)
-            #print(check_username)
             if check_username['status'] == 0:
             # User exist and ready for verify phone by sms code
                 context = {'form': form, 'submitbutton': submitbutton}
                 request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain}
                 # Временно перенаправлю на ввод пароля
-                #return redirect("verify")
-                return redirect("password")
+                return redirect("verify")
+                #return redirect("password")
             elif check_username['status'] == 1:
                 error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'
                 context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
@@ -72,6 +67,7 @@ def domain_choice(request):
             context = {'form': form}
             return render(request, 'domain_choice.html', context)
     else:
+        request.session.flush()
         return HttpResponseForbidden("Forbidden")
     
 def check_ldap_user(username, domain):
@@ -108,11 +104,11 @@ def check_ldap_user(username, domain):
             status = 0
             try:
                 mobile = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
-                print(mobile)
+                #print(mobile)
                 givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
-                print(givenName)
+                #print(givenName)
                 distinguishedName = ldap_check_user[0][0]
-                print(distinguishedName)
+                #print(distinguishedName)
                 result = {"mobile": mobile,"distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
                 return result
             except Exception as ex:
@@ -147,20 +143,31 @@ def generate_code():
     
 def verify_phone(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
+        session_id = request.session._session_key
+        count_of_fails_code = 0
         if request.method == 'POST':
             submitbutton = request.POST.get("submit")
             code = ''
             form = VerifyPhone(request.POST or None)
+            send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+            print(send_code)
+            print(f'#################################################{count_of_fails_code}')
             if form.is_valid():
                 code = form.cleaned_data.get("code")
                 # with open('db.txt', 'r') as db:
                 #     send_code = db.readlines()[-1].strip('\n')
                 if int(send_code) == int(code):
                     context = {'form': form, 'submitbutton': submitbutton}
+                    sms_code.objects.filter(session_id=session_id).delete()
                     return redirect("password")
                 else:
-                    context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
-                    return render(request, 'verify_phone.html', context)
+                    count_of_fails_code += 1
+                    if count_of_fails_code < count_of_fails_code_threshold - 1:
+                        context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
+                        return render(request, 'verify_phone.html', context)
+                    else:
+                        request.session.flush()
+                        return HttpResponseForbidden("Forbidden")
         elif request.method == 'GET':
             # Generate random code
             send_code = generate_code()
@@ -168,10 +175,17 @@ def verify_phone(request):
             # Send code by sms
             mobile = request.session.get('data', None)['mobile']
             status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
+            sms_data = sms_code.objects.create(
+                session_id = session_id,
+                send_code = send_code,
+                created_at = datetime.now(),
+                status = status_code_sms,
+            )
             form = VerifyPhone()
             context = {'form': form}
             return render(request, 'verify_phone.html', context)
     else:
+        request.session.flush()
         return HttpResponseForbidden("Forbidden")
 
 def send_code_by_sms(login, password, phone, code):
@@ -183,12 +197,8 @@ def change_password(request):
         data = request.session.get('data', None)
         if request.method == 'POST':
             submitbutton = request.POST.get("submit")
-            # password = ''
-            # confirm_password = ''
             form = ChangePassword(request.POST or None)
             if form.is_valid():
-                # password = form.cleaned_data.get("new_password")
-                # confirm_password = form.cleaned_data.get("confirm_new_password")
                 if form.cleaned_data.get("new_password") != form.cleaned_data.get("confirm_new_password"):
                     error_message = 'Введенные пароли не совпадают!'
                     context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
@@ -212,11 +222,22 @@ def change_password(request):
                             domain = data['domain'],
                         )
                         return redirect("success")
+                        # change password
+                        # Now, try perform the password update
+                        # try:
+                        #     check_ldap_user.
+                        #     new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
+                        #     mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
+                        #     l.modify_s(request.session.get('data', None)['distinguishedName'], mod_list)
+                        #     return redirect("success")
+                        # except Exception as ex:
+                        #     pass
         elif request.method == 'GET':
             form = ChangePassword()
             context = {'form': form}
             return render(request, 'change_password.html', context)
     else:
+        request.session.flush()
         return HttpResponseForbidden("Forbidden")
 
 def hash_salt(password):
@@ -249,6 +270,7 @@ class PasswordValidator(object):
             model_user.objects.filter(username=username, domain=domain)
             # the same query
             history_of_change = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[:sl]
+            on_delete_history = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[sl-1:].values_list("id", flat=True)
             today_changed = model_user.objects.filter(username=username, domain=domain, created_at__contains=today_date)
             print("Это запрос today_changed.count:")
             if today_changed.count() >= conditions['change_per_day']:
@@ -257,15 +279,21 @@ class PasswordValidator(object):
             #queryset = model_user.objects.filter(username=username, domain=domain).values_list('hash')
             print(f"Это запрос history: {history_of_change}")
             for entry in history_of_change:
-                print({'hash': entry.hash, 'salt': entry.salt})
+                #print({'hash': entry.hash, 'salt': entry.salt})
                 comparison = hash_unsalt(password, entry.hash, entry.salt, algoritm, iter, dklen)
                 if comparison['err_code'] == 1:
                     return comparison['err_msg']
-                
+            # try delete old entry in history
+            try:
+                model_user.objects.filter(id__in=list(on_delete_history)).delete()
+            except Exception as ex:
+                pass
 
 def success(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
-        result = request.session.get('data', None)
-        return render(request, 'success.html', context=result)
+        context = {'givenName': request.session.get('data', None)['givenName']}
+        request.session.flush()
+        return render(request, 'success.html', context)
     else:
+        request.session.flush()
         return HttpResponseForbidden("Forbidden")
