@@ -10,8 +10,8 @@ from re import search
 from random import choice, shuffle
 #import psycopg2
 import ldap
-from secret import admin_username, admin_password
-from vars import var_your_domain, var_volhovez_local, sms_login, sms_password, algoritm, coding, iter, dklen, urandom_bytes, conditions, count_of_fails_code_threshold
+from secret import admin_username, admin_password, sms_login, sms_password
+from vars import var_your_domain, var_volhovez_local, algoritm, coding, iter, dklen, urandom_bytes, conditions, count_of_fails_code_threshold
 import requests
 #from django.core.exceptions import ValidationError
 from re import findall
@@ -45,7 +45,9 @@ def domain_choice(request):
             username = request.session.get('data', None)['username']
             context = {'form': form, 'submitbutton': submitbutton}
             if domain == 'your_domain':
-                check_username = check_ldap_user(username, var_your_domain)
+                check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=admin_username,admin_password=admin_password)
+                check_username = check_ldap_user.check_user(username=username, domain=var_your_domain)
+                check_ldap_user.close_ldap_session()
             elif domain == 'your_domain':
                 check_username = check_ldap_user(username, var_volhovez_local)
             if check_username['status'] == 0:
@@ -70,11 +72,9 @@ def domain_choice(request):
         request.session.flush()
         return HttpResponseForbidden("Forbidden")
     
-def check_ldap_user(username, domain):
-    ad_server = domain['ad_server']
-    search_scope = ldap.SCOPE_SUBTREE
-    search_filter = f'(&(sAMAccountName={username})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
-    def ldap_connect():
+class check_ldap_user(object):
+    #ad_server = domain['ad_server']
+    def ldap_connect(ad_server, admin_username, admin_password):
         try:
             # Force cert validation
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
@@ -95,7 +95,9 @@ def check_ldap_user(username, domain):
             print(ex)
 
     # Check user status in LDAP (enabled or disabled)
-    def check_user():
+    def check_user(username, domain):
+        search_scope = ldap.SCOPE_SUBTREE
+        search_filter = f'(&(sAMAccountName={username})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
         base_dn = domain['base_dn']
         retrieve_attributes = domain['retrieve_attributes']
         ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
@@ -126,10 +128,10 @@ def check_ldap_user(username, domain):
         l.unbind_s()
 
     # Run script
-    ldap_connect()
-    res = check_user()
-    close_ldap_session()
-    return res
+    # ldap_connect()
+    # res = check_user()
+    # close_ldap_session()
+    # return res
     
 
 def generate_code():
@@ -221,17 +223,17 @@ def change_password(request):
                             salt = hash['salt'],
                             domain = data['domain'],
                         )
-                        return redirect("success")
-                        # change password
-                        # Now, try perform the password update
-                        # try:
-                        #     check_ldap_user.
-                        #     new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
-                        #     mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
-                        #     l.modify_s(request.session.get('data', None)['distinguishedName'], mod_list)
-                        #     return redirect("success")
-                        # except Exception as ex:
-                        #     pass
+                        #return redirect("success")
+                        #Now, try perform the password update
+                        try:
+                            check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=admin_username,admin_password=admin_password)
+                            new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
+                            mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
+                            l.modify_s(request.session.get('data', None)['distinguishedName'], mod_list)
+                            check_ldap_user.close_ldap_session()
+                            return redirect("success")
+                        except Exception as ex:
+                            pass
         elif request.method == 'GET':
             form = ChangePassword()
             context = {'form': form}

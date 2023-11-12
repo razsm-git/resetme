@@ -143,12 +143,12 @@ CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
 CAPTCHA_FONT_SIZE = 65
 CAPTCHA_TIMEOUT = 1
 
-#sms.ru
-SMS_RU = {
-    "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
-    "TEST": True, # отправка смс в тестовом режиме, по умолчанию False
-    #"SENDER": 'your_login_here', # отправитель - необязательно поле
-}
+# #sms.ru
+# SMS_RU = {
+#     "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
+#     "TEST": True, # отправка смс в тестовом режиме, по умолчанию False
+#     #"SENDER": 'your_login_here', # отправитель - необязательно поле
+# }
 
 
 #### ONLY FOR DEBUG SQL QUERY
