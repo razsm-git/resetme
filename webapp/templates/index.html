@@ -1,14 +1,17 @@
-<head>
-    <meta charset="UTF-8">
-    <title>Страница сброса пароля</title>
-</head>
-<body>
-    <h2>Введите Ваш логин</h2>
-    <div class="form-row">
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
     <form action="" method="POST">
         {% csrf_token %}
-        {{ form.as_p }}
-        <input type="Submit" name="submit" value="Далее"/>
+        <div class="row">
+            {{ form.username|as_crispy_field }}
+        </div>
+        <br>
+        <div class="row">
+            {{ form.captcha|as_crispy_field }}
+        </div>
+        <input type="Submit" class="btn btn-success" name="submit" value="Далее"/>
     </form>
-    </div>
-</body>
+{% endblock %}

@@ -7,7 +7,8 @@ return code from function which check user in LDAP:
 
 ### Зависимости
 django-simple-captcha
-
+django-crispy-forms
+crispy-bootstrap4
 ###
 
 # Условия в секции #passwords файла vars.py проверяются функцией findall из re

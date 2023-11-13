@@ -1,17 +1,17 @@
-<head>
-    <meta charset="UTF-8">
-    <title>Выберите домен</title>
-</head>
-<body>
-    <h2>Выберите домен из списка.</h2>
-    <div class="form-row">
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h2>Выберите домен из списка</h2>
     <form action="" method="POST">
         {% csrf_token %}
-        {{ form.as_p }}
-        <input type="Submit" name="submit" value="Далее"/>
+        <div class="row">
+            {{ form.domain|as_crispy_field }}
+        </div>
+        <input type="Submit" class="btn btn-success" name="submit" value="Далее"/>
     </form>
     {% if error_message %}
-            <h1>{{ error_message }}</h1>
+        <h3>{{ error_message }}</h1>
     {% endif %}
-    </div>
-</body>
+{% endblock %}

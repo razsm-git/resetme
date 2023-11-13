@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'captcha',
-    'smsru',
+    'crispy_forms',
+    "crispy_bootstrap4",
 ]
 
 MIDDLEWARE = [
@@ -144,6 +145,8 @@ CAPTCHA_FONT_SIZE = 65
 CAPTCHA_TIMEOUT = 1
 
 #SESSION_COOKIE_AGE = 60
+CRISPY_TEMPLATE_PACK = 'bootstrap4'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
 # #sms.ru
 # SMS_RU = {
