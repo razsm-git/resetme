@@ -143,6 +143,8 @@ CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
 CAPTCHA_FONT_SIZE = 65
 CAPTCHA_TIMEOUT = 1
 
+#SESSION_COOKIE_AGE = 60
+
 # #sms.ru
 # SMS_RU = {
 #     "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
