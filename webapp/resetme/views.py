@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseServerError
 #from django.forms import ModelForm
 from .forms import UserForm, VerifyPhone, DomainForm, ChangePassword
 #from resetme.models import domain
@@ -11,7 +11,7 @@ from random import choice, shuffle
 #import psycopg2
 import ldap
 from secret import admin_username, admin_password, sms_login, sms_password
-from vars import var_your_domain, var_volhovez_local, algoritm, coding, iter, dklen, urandom_bytes, conditions, count_of_fails_code_threshold
+from vars import *
 import requests
 #from django.core.exceptions import ValidationError
 from re import findall
@@ -65,7 +65,6 @@ def domain_choice(request):
                 context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
             return render(request, 'domain_choice.html', context)
         else:
-            form = DomainForm()
             context = {'form': form}
             return render(request, 'domain_choice.html', context)
     else:
@@ -146,14 +145,13 @@ def generate_code():
 def verify_phone(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
         session_id = request.session._session_key
-        count_of_fails_code = 0
         if request.method == 'POST':
             submitbutton = request.POST.get("submit")
             code = ''
             form = VerifyPhone(request.POST or None)
             send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
             print(send_code)
-            print(f'#################################################{count_of_fails_code}')
+            #print(f'#################################################{count_of_fails_code}')
             if form.is_valid():
                 code = form.cleaned_data.get("code")
                 # with open('db.txt', 'r') as db:
@@ -163,13 +161,20 @@ def verify_phone(request):
                     sms_code.objects.filter(session_id=session_id).delete()
                     return redirect("password")
                 else:
-                    count_of_fails_code += 1
-                    if count_of_fails_code < count_of_fails_code_threshold - 1:
+                    count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
+                    update_count_of_fails_code, created = sms_code.objects.update_or_create(
+                        session_id=session_id, send_code=send_code, defaults=count_of_fails_code
+                    )
+                    if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
                         context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
                         return render(request, 'verify_phone.html', context)
                     else:
                         request.session.flush()
+                        sms_code.objects.filter(session_id=session_id).delete()
                         return HttpResponseForbidden("Forbidden")
+            else:
+                context = {'form': form}
+                return render(request, 'verify_phone.html', context)
         elif request.method == 'GET':
             # Generate random code
             send_code = generate_code()
@@ -182,6 +187,7 @@ def verify_phone(request):
                 send_code = send_code,
                 created_at = datetime.now(),
                 status = status_code_sms,
+                count_of_fails_code = 0
             )
             form = VerifyPhone()
             context = {'form': form}
@@ -212,20 +218,19 @@ def change_password(request):
                         context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
                         return render(request, 'change_password.html', context)
                     else:
-                        hash = hash_salt(form.cleaned_data.get("new_password"))
-                        user_data = user.objects.create(
-                            username = data['username'],
-                            first_name = data['givenName'],
-                            phone = data['mobile'],
-                            status = 'Password changed',
-                            created_at = datetime.now(),
-                            hash = hash['hash'],
-                            salt = hash['salt'],
-                            domain = data['domain'],
-                        )
-                        #return redirect("success")
-                        #Now, try perform the password update
                         try:
+                            hash = hash_salt(form.cleaned_data.get("new_password"))
+                            user_data = user.objects.create(
+                                username = data['username'],
+                                first_name = data['givenName'],
+                                phone = data['mobile'],
+                                status = 'Password changed',
+                                created_at = datetime.now(),
+                                hash = hash['hash'],
+                                salt = hash['salt'],
+                                domain = data['domain'],
+                            )
+                            #Now, try perform the password update
                             check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=admin_username,admin_password=admin_password)
                             new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
                             mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
@@ -233,7 +238,7 @@ def change_password(request):
                             check_ldap_user.close_ldap_session()
                             return redirect("success")
                         except Exception as ex:
-                            pass
+                            return HttpResponseServerError("Упс..Что-то пошло не так...")
         elif request.method == 'GET':
             form = ChangePassword()
             context = {'form': form}

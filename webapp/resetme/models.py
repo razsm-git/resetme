@@ -1,6 +1,6 @@
 from django.db import models
 from datetime import datetime
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 
 
 class user(models.Model):
@@ -23,6 +23,7 @@ class sms_code(models.Model):
     session_id = models.CharField()
     send_code = models.CharField(max_length=6,validators=[RegexValidator(r'^[0-9]{6}$')])
     created_at = models.DateTimeField(default=datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    count_of_fails_code = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])
     status = models.CharField(max_length=100)
 
 # class domain(models.Model):
