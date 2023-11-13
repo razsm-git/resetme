@@ -1,39 +1,58 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponseForbidden, HttpResponseServerError
-#from django.forms import ModelForm
 from .forms import UserForm, VerifyPhone, DomainForm, ChangePassword
-#from resetme.models import domain
-#from django.db import models
 from re import search
-#from smsru.service import SmsRuApi
 # For generate randoom sms code
 from random import choice, shuffle
-#import psycopg2
 import ldap
 from secret import admin_username, admin_password, sms_login, sms_password
 from vars import *
 import requests
-#from django.core.exceptions import ValidationError
 from re import findall
-#from django.utils.translation import ugettext as _
 from os import urandom
+# For hash and salt pass
 import hashlib
-from resetme.models import user, sms_code
+from resetme.models import user, sms_code, bruteforce
 from datetime import datetime, date
 
 
 def index(request):
     submitbutton = request.POST.get("submit")
     username = ''
-    form = UserForm(request.POST or None)
-    if form.is_valid():
-        username = form.cleaned_data.get("username")
-        context = {'form': form, 'submitbutton': submitbutton, 'username': username}
-        request.session['data'] = {'username': username}
-        return redirect("domain")
+    if not request.session._session_key:
+        request.session.create()
     else:
+        session_id = request.session._session_key
+    session_id = request.session.session_key
+    if request.method == 'GET':
+        form = UserForm()
         context = {'form': form}
+        brute_force, created  = bruteforce.objects.update_or_create(
+                session_id = session_id,
+                count_of_fails_form = 0,
+                defaults={'created_at': datetime.now()}
+            )
         return render(request, 'index.html', context)
+    elif request.method == 'POST':
+        form = UserForm(request.POST or None)
+        if form.is_valid():
+            username = form.cleaned_data.get("username")
+            request.session['data'] = {'username': username}
+            return redirect("domain")
+        else:
+            update_count_of_fails_form = {'count_of_fails_form': list(bruteforce.objects.filter(session_id=session_id).values_list
+            ('count_of_fails_form', flat=True))[0] + 1}
+            update_brute_force, update_created  = bruteforce.objects.update_or_create(
+                session_id = session_id,
+                defaults=update_count_of_fails_form
+            )
+            if update_count_of_fails_form['count_of_fails_form'] < count_of_fails_form_threshold:
+                context = {'form': form}
+                return render(request, 'index.html', context)
+            else:
+                request.session.flush()
+                bruteforce.objects.filter(session_id=session_id).delete()
+                return HttpResponseForbidden("Forbidden")
     
 def domain_choice(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
@@ -54,9 +73,7 @@ def domain_choice(request):
             # User exist and ready for verify phone by sms code
                 context = {'form': form, 'submitbutton': submitbutton}
                 request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain}
-                # Временно перенаправлю на ввод пароля
                 return redirect("verify")
-                #return redirect("password")
             elif check_username['status'] == 1:
                 error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'
                 context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
@@ -72,7 +89,6 @@ def domain_choice(request):
         return HttpResponseForbidden("Forbidden")
     
 class check_ldap_user(object):
-    #ad_server = domain['ad_server']
     def ldap_connect(ad_server, admin_username, admin_password):
         try:
             # Force cert validation
@@ -89,9 +105,8 @@ class check_ldap_user(object):
             l.set_option(ldap.OPT_DEBUG_LEVEL, 255)
             # Bind (as admin user)
             l.simple_bind_s(admin_username, admin_password)
-            print("Connected!")
         except Exception as ex:
-            print(ex)
+            pass
 
     # Check user status in LDAP (enabled or disabled)
     def check_user(username, domain):
@@ -105,11 +120,8 @@ class check_ldap_user(object):
             status = 0
             try:
                 mobile = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
-                #print(mobile)
                 givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
-                #print(givenName)
                 distinguishedName = ldap_check_user[0][0]
-                #print(distinguishedName)
                 result = {"mobile": mobile,"distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
                 return result
             except Exception as ex:
@@ -126,20 +138,12 @@ class check_ldap_user(object):
     def close_ldap_session():
         l.unbind_s()
 
-    # Run script
-    # ldap_connect()
-    # res = check_user()
-    # close_ldap_session()
-    # return res
-    
 
 def generate_code():
     numbers = ['1','2','3','4','5','6','7','8','9']
     #Generate random code
     shuffle(numbers)
     random_code = ''.join([choice(numbers) for n in range(6)])
-    with open('db.txt', 'w') as db:
-        db.write(random_code)
     return random_code
     
 def verify_phone(request):
@@ -150,12 +154,8 @@ def verify_phone(request):
             code = ''
             form = VerifyPhone(request.POST or None)
             send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
-            print(send_code)
-            #print(f'#################################################{count_of_fails_code}')
             if form.is_valid():
                 code = form.cleaned_data.get("code")
-                # with open('db.txt', 'r') as db:
-                #     send_code = db.readlines()[-1].strip('\n')
                 if int(send_code) == int(code):
                     context = {'form': form, 'submitbutton': submitbutton}
                     sms_code.objects.filter(session_id=session_id).delete()
@@ -163,7 +163,9 @@ def verify_phone(request):
                 else:
                     count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
                     update_count_of_fails_code, created = sms_code.objects.update_or_create(
-                        session_id=session_id, send_code=send_code, defaults=count_of_fails_code
+                        session_id=session_id, 
+                        send_code=send_code, 
+                        defaults=count_of_fails_code
                     )
                     if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
                         context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
@@ -182,7 +184,7 @@ def verify_phone(request):
             # Send code by sms
             mobile = request.session.get('data', None)['mobile']
             status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
-            sms_data = sms_code.objects.create(
+            sms_data = sms_code.objects.update_or_create(
                 session_id = session_id,
                 send_code = send_code,
                 created_at = datetime.now(),

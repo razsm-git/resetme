@@ -26,10 +26,7 @@ class sms_code(models.Model):
     count_of_fails_code = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])
     status = models.CharField(max_length=100)
 
-# class domain(models.Model):
-#     # First element save in DB, second element view in form field
-#     domain_list = [
-#     ("your_domain", "your_domain"),
-#     ("your_domain", "your_domain"),
-# ]
-#     domain = models.CharField(verbose_name="Выберите домен из списка:", max_length=14, choices=domain_list)
+class bruteforce(models.Model):
+    session_id = models.CharField()
+    created_at = models.DateTimeField(default=datetime.now().strftime("%d.%m.%Y %H:%M:%S"))
+    count_of_fails_form = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])
