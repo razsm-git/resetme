@@ -3,15 +3,16 @@
 {% load crispy_forms_tags %}
 
 {% block content %}
-    <h2>Выберите домен из списка</h2>
+    <h4>Выберите домен из списка</h4>
     <form action="" method="POST">
         {% csrf_token %}
         <div class="row">
             {{ form.domain|as_crispy_field }}
         </div>
+        <br>
+        {% if error_message %}
+            <h5 class="text-danger">{{ error_message }}</h5>
+        {% endif %}
         <input type="Submit" class="btn btn-success" name="submit" value="Далее"/>
     </form>
-    {% if error_message %}
-        <h3>{{ error_message }}</h1>
-    {% endif %}
-{% endblock %}
+{% endblock content %}

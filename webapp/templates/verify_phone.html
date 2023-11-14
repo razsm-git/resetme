@@ -1,17 +1,18 @@
-<head>
-    <meta charset="UTF-8">
-    <title>Верификация пользователя</title>
-</head>
-<body>
-    <h2>Введите код подтверждения, направленный Вам на корпоративнй номер телефона в виде смс сообщения.</h2>
-    <div class="form-row">
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <h4>Введите код подтверждения, направленный Вам на корпоративный номер телефона в виде смс сообщения</h4>
     <form action="" method="POST">
         {% csrf_token %}
-        {{ form.as_p }}
-        <input type="Submit" name="submit" value="Далее"/>
+        <div class="row">
+            {{ form.code|as_crispy_field }}
+        </div>
+        <br>
+        {% if error_message %}
+            <h5 class="text-danger">{{ error_message }}</h5>
+        {% endif %}
+        <input type="Submit" class="btn btn-success" name="submit" value="Далее"/>
     </form>
-    {% if code_error %}
-            <h1>{{ code_error }}</h1>
-    {% endif %}
-    </div>
-</body>
+{% endblock content %}

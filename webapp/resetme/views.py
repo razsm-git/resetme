@@ -52,7 +52,7 @@ def index(request):
             else:
                 request.session.flush()
                 bruteforce.objects.filter(session_id=session_id).delete()
-                return HttpResponseForbidden("Forbidden")
+                return HttpResponseForbidden()
     
 def domain_choice(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
@@ -86,7 +86,7 @@ def domain_choice(request):
             return render(request, 'domain_choice.html', context)
     else:
         request.session.flush()
-        return HttpResponseForbidden("Forbidden")
+        return HttpResponseForbidden()
     
 class check_ldap_user(object):
     def ldap_connect(ad_server, admin_username, admin_password):
@@ -168,12 +168,12 @@ def verify_phone(request):
                         defaults=count_of_fails_code
                     )
                     if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
-                        context = {'form': form, 'submitbutton': submitbutton, 'code_error': 'Вы ввели неверный код!'}
+                        context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!'}
                         return render(request, 'verify_phone.html', context)
                     else:
                         request.session.flush()
                         sms_code.objects.filter(session_id=session_id).delete()
-                        return HttpResponseForbidden("Forbidden")
+                        return HttpResponseForbidden()
             else:
                 context = {'form': form}
                 return render(request, 'verify_phone.html', context)
@@ -196,7 +196,7 @@ def verify_phone(request):
             return render(request, 'verify_phone.html', context)
     else:
         request.session.flush()
-        return HttpResponseForbidden("Forbidden")
+        return HttpResponseForbidden()
 
 def send_code_by_sms(login, password, phone, code):
     req = requests.get(f"https://smsc.ru/sys/send.php?login={login}&psw={password}&phones={phone}&mes={code}")
@@ -240,6 +240,7 @@ def change_password(request):
                             check_ldap_user.close_ldap_session()
                             return redirect("success")
                         except Exception as ex:
+                            request.session.flush()
                             return HttpResponseServerError("Упс..Что-то пошло не так...")
         elif request.method == 'GET':
             form = ChangePassword()
@@ -247,7 +248,7 @@ def change_password(request):
             return render(request, 'change_password.html', context)
     else:
         request.session.flush()
-        return HttpResponseForbidden("Forbidden")
+        return HttpResponseForbidden()
 
 def hash_salt(password):
     salt = urandom(urandom_bytes)
@@ -264,11 +265,11 @@ def hash_unsalt(password, hash, salt, algoritm, iter, dklen):
 class PasswordValidator(object):
     def validate(self, password, username, domain, conditions, model_user):
         if not findall(conditions['upper'], password):
-            return "Пароль должен содержать заглавные латинские буквы."
+            return "Пароль должен содержать заглавные латинские буквы!"
         elif not findall(conditions['lower'], password):
-            return "Пароль должен содержать строчные латинские буквы."
+            return "Пароль должен содержать строчные латинские буквы!"
         elif not findall(conditions['number'], password):
-            return "Пароль должен содержать цифры"
+            return "Пароль должен содержать цифры!"
         elif len(password) < 8:
             return "Длина пароля должна быть больше либо равна 8 символам!"
         # Below requests to DB
@@ -305,4 +306,4 @@ def success(request):
         return render(request, 'success.html', context)
     else:
         request.session.flush()
-        return HttpResponseForbidden("Forbidden")
+        return HttpResponseForbidden()

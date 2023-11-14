@@ -1,9 +1,11 @@
-<head>
-    <meta charset="UTF-8">
-    <title>Пароль успешно обновлен</title>
-</head>
-<body>
-    <h2>Пароль успешно обновлен. Изменения будут применены в течении 5 минут.</h2>
-    <h1>Удачного дня, {{ givenName }}.</h1>
-    <h2>А теперь за работу!</h2>
-</body>
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block header %}
+{% endblock header %}
+
+{% block content %}
+    <h4>Пароль успешно обновлен. Изменения будут применены в течении 5 минут</h4>
+    <h4>Удачного дня, {{ givenName }}</h4>
+{% endblock content %}
