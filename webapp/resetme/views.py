@@ -38,6 +38,10 @@ def index(request):
         if form.is_valid():
             username = form.cleaned_data.get("username")
             request.session['data'] = {'username': username}
+            try:
+                bruteforce.objects.filter(session_id = session_id).delete()
+            except Exception as ex:
+                pass
             return redirect("domain")
         else:
             update_count_of_fails_form = {'count_of_fails_form': list(bruteforce.objects.filter(session_id=session_id).values_list
