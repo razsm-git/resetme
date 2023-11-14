@@ -150,53 +150,74 @@ def verify_phone(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
         session_id = request.session._session_key
         if request.method == 'POST':
-            submitbutton = request.POST.get("submit")
-            code = ''
-            form = VerifyPhone(request.POST or None)
-            send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
-            if form.is_valid():
-                code = form.cleaned_data.get("code")
-                if int(send_code) == int(code):
-                    context = {'form': form, 'submitbutton': submitbutton}
-                    sms_code.objects.filter(session_id=session_id).delete()
-                    return redirect("password")
-                else:
-                    count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
-                    update_count_of_fails_code, created = sms_code.objects.update_or_create(
-                        session_id=session_id, 
-                        send_code=send_code, 
-                        defaults=count_of_fails_code
-                    )
-                    if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
-                        context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!'}
-                        return render(request, 'verify_phone.html', context)
-                    else:
-                        request.session.flush()
+            if 'submit' in request.POST:
+                submitbutton = request.POST.get("submit")
+                code = ''
+                form = VerifyPhone(request.POST or None)
+                send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+                if form.is_valid():
+                    code = form.cleaned_data.get("code")
+                    if int(send_code) == int(code):
+                        context = {'form': form, 'submitbutton': submitbutton}
                         sms_code.objects.filter(session_id=session_id).delete()
-                        return HttpResponseForbidden()
-            else:
+                        return redirect("password")
+                    else:
+                        count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
+                        update_count_of_fails_code, created = sms_code.objects.update_or_create(
+                            session_id=session_id, 
+                            send_code=send_code, 
+                            defaults=count_of_fails_code
+                        )
+                        if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
+                            context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!'}
+                            return render(request, 'verify_phone.html', context)
+                        else:
+                            request.session.flush()
+                            sms_code.objects.filter(session_id=session_id).delete()
+                            return HttpResponseForbidden()
+                else:
+                    context = {'form': form}
+                    return render(request, 'verify_phone.html', context)
+            if 'retry_code' in request.POST:
+                print('Кнопка Отправить код повторно - нажата.')
+                send_code_from_form(request, session_id)
+                form = VerifyPhone()
                 context = {'form': form}
                 return render(request, 'verify_phone.html', context)
         elif request.method == 'GET':
-            # Generate random code
-            send_code = generate_code()
-            print(f'Отправленный код: {send_code}')
-            # Send code by sms
-            mobile = request.session.get('data', None)['mobile']
-            status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
-            sms_data = sms_code.objects.update_or_create(
-                session_id = session_id,
-                send_code = send_code,
-                created_at = datetime.now(),
-                status = status_code_sms,
-                count_of_fails_code = 0
-            )
-            form = VerifyPhone()
-            context = {'form': form}
-            return render(request, 'verify_phone.html', context)
+            # Check if code was sended
+            try:
+                code_in_db = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+                code_in_db_status = 0
+            except Exception:
+                code_in_db_status = 1
+            if code_in_db_status == 0:
+                form = VerifyPhone()
+                context = {'form': form}
+                return render(request, 'verify_phone.html', context)
+            else:
+                send_code_from_form(request, session_id)
+                form = VerifyPhone()
+                context = {'form': form}
+                return render(request, 'verify_phone.html', context)
     else:
         request.session.flush()
         return HttpResponseForbidden()
+    
+def send_code_from_form(request, session_id):
+    # Generate random code
+    send_code = generate_code()
+    print(f'Отправленный код: {send_code}')
+    # Send code by sms
+    mobile = request.session.get('data', None)['mobile']
+    status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
+    sms_data = sms_code.objects.update_or_create(
+        session_id = session_id,
+        #created_at = datetime.now(),
+        status = status_code_sms,
+        count_of_fails_code = 0,
+        defaults={'send_code': send_code},
+    )
 
 def send_code_by_sms(login, password, phone, code):
     req = requests.get(f"https://smsc.ru/sys/send.php?login={login}&psw={password}&phones={phone}&mes={code}")
@@ -227,7 +248,6 @@ def change_password(request):
                                 first_name = data['givenName'],
                                 phone = data['mobile'],
                                 status = 'Password changed',
-                                created_at = datetime.now(),
                                 hash = hash['hash'],
                                 salt = hash['salt'],
                                 domain = data['domain'],

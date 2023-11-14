@@ -11,7 +11,7 @@ class UserForm(forms.Form):
 
 #DecimalField max_digits=6
 class VerifyPhone(forms.Form):
-    code = forms.CharField(required=True, label="Код подтверждения:", validators=[RegexValidator(
+    code = forms.CharField(required=False, label="Код подтверждения:", validators=[RegexValidator(
         '^[0-9]{6}$', message="Это не код подтверждения. Не пытайся хитрить.")], error_messages={'invalid': 'Вы ввели неверный код!'})
 
 # Import from model    
