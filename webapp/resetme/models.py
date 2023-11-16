@@ -6,7 +6,7 @@ from django.core.validators import RegexValidator, MinValueValidator, MaxValueVa
 class user(models.Model):
     username = models.CharField(max_length=9)
     first_name = models.CharField(max_length=30)
-    phone = models.CharField(max_length=11, validators=[RegexValidator(r'^8[0-9]{10}$')])
+    phone = models.CharField(max_length=12, validators=[RegexValidator(r'^+7[0-9]{10}$')])
     #send_code = models.IntegerField(validators=[RegexValidator(r'^[0-9]{6}$')])
     status = models.CharField(max_length=100)
     created_at = models.DateTimeField(default=datetime.now())

@@ -5,7 +5,7 @@ from re import search
 # For generate randoom sms code
 from random import choice, shuffle
 import ldap
-from secret import admin_username, admin_password, sms_login, sms_password
+from secret import sms_login, sms_password
 from vars import *
 import requests
 from re import findall
@@ -14,9 +14,15 @@ from os import urandom
 import hashlib
 from resetme.models import user, sms_code, bruteforce
 from datetime import datetime, date
+#for test
+#import redis
+#from django.conf import settings
 
 
 def index(request):
+    ### Для теста
+    #redis_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
+    ###
     submitbutton = request.POST.get("submit")
     username = ''
     if not request.session._session_key:
@@ -68,15 +74,19 @@ def domain_choice(request):
             username = request.session.get('data', None)['username']
             context = {'form': form, 'submitbutton': submitbutton}
             if domain == 'your_domain':
-                check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=admin_username,admin_password=admin_password)
+                check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=var_your_domain['admin_username'],admin_password=var_your_domain['admin_password'])
                 check_username = check_ldap_user.check_user(username=username, domain=var_your_domain)
                 check_ldap_user.close_ldap_session()
+                domain_var = var_your_domain
             elif domain == 'your_domain':
-                check_username = check_ldap_user(username, var_volhovez_local)
+                check_ldap_user.ldap_connect(ad_server=var_volhovez_local['ad_server'],admin_username=var_volhovez_local['admin_username'],admin_password=var_volhovez_local['admin_password'])
+                check_username = check_ldap_user.check_user(username=username, domain=var_volhovez_local)
+                check_ldap_user.close_ldap_session()
+                domain_var = var_volhovez_local
             if check_username['status'] == 0:
             # User exist and ready for verify phone by sms code
                 context = {'form': form, 'submitbutton': submitbutton}
-                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain}
+                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain, 'domain_var': domain_var}
                 return redirect("verify")
             elif check_username['status'] == 1:
                 error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'
@@ -115,10 +125,13 @@ class check_ldap_user(object):
     # Check user status in LDAP (enabled or disabled)
     def check_user(username, domain):
         search_scope = ldap.SCOPE_SUBTREE
-        search_filter = f'(&(sAMAccountName={username})(objectCategory=person)(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2))(mail=* @example.ru)(mobile=8*))'
+        search_filter = domain['search_filter'].format(username)
+        print(search_filter)
         base_dn = domain['base_dn']
+        print(base_dn)
         retrieve_attributes = domain['retrieve_attributes']
         ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
+        print(ldap_check_user)
         if ldap_check_user:
             # If user exists and enabled in LDAP
             status = 0
@@ -257,7 +270,7 @@ def change_password(request):
                                 domain = data['domain'],
                             )
                             #Now, try perform the password update
-                            check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=admin_username,admin_password=admin_password)
+                            check_ldap_user.ldap_connect(ad_server=data['domain_var']['ad_server'],admin_username=data['domain_var']['admin_username'],admin_password=data['domain_var']['admin_password'])
                             new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
                             mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
                             l.modify_s(request.session.get('data', None)['distinguishedName'], mod_list)
@@ -265,7 +278,7 @@ def change_password(request):
                             return redirect("success")
                         except Exception as ex:
                             request.session.flush()
-                            return HttpResponseServerError("Упс..Что-то пошло не так...")
+                            return HttpResponseServerError("Упс..Что-то пошло не так...Сообщите об этом в отдел ИТ")
         elif request.method == 'GET':
             form = ChangePassword()
             context = {'form': form}
@@ -306,17 +319,17 @@ class PasswordValidator(object):
             history_of_change = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[:sl]
             on_delete_history = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[sl-1:].values_list("id", flat=True)
             today_changed = model_user.objects.filter(username=username, domain=domain, created_at__contains=today_date)
-            print("Это запрос today_changed.count:")
             if today_changed.count() >= conditions['change_per_day']:
                 return "Замечена подозрительная активность с участием вашего аккаунта. обратитесь в отдел ИТ для изменения пароля."
             ###queryset = model_user.objects.filter(username=username).filter(domain=domain).filter(created_at__gte='2023-01-01').values()
             #queryset = model_user.objects.filter(username=username, domain=domain).values_list('hash')
-            print(f"Это запрос history: {history_of_change}")
             for entry in history_of_change:
-                #print({'hash': entry.hash, 'salt': entry.salt})
-                comparison = hash_unsalt(password, entry.hash, entry.salt, algoritm, iter, dklen)
-                if comparison['err_code'] == 1:
-                    return comparison['err_msg']
+                try:
+                    comparison = hash_unsalt(password, entry.hash, entry.salt, algoritm, iter, dklen)
+                    if comparison['err_code'] == 1:
+                        return comparison['err_msg']
+                except Exception:
+                    pass
             # try delete old entry in history
             try:
                 model_user.objects.filter(id__in=list(on_delete_history)).delete()

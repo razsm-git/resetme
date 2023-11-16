@@ -9,6 +9,7 @@ return code from function which check user in LDAP:
 django-simple-captcha
 django-crispy-forms
 crispy-bootstrap4
+#django_redis ?
 ###
 
 # Условия в секции #passwords файла vars.py проверяются функцией findall из re

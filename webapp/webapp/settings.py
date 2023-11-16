@@ -148,6 +148,24 @@ CAPTCHA_TIMEOUT = 1
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
+#Redis settings
+# REDIS_HOST = 'localhost'
+# REDIS_PORT = 6379
+
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://127.0.0.1:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient"
+#         },
+#         "KEY_PREFIX": "resetme"
+#     }
+# }
+
+# # Cache time to live is 15 minutes.
+# CACHE_TTL = 60 * 15
+
 # #sms.ru
 # SMS_RU = {
 #     "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
