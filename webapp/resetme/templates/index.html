@@ -2,17 +2,15 @@
 
 {% load crispy_forms_tags %}
 
+
+
 {% block content %}
     <form action="" method="POST">
         {% csrf_token %}
-        <div class="row">
             {{ form.username|as_crispy_field }}
-        </div>
-        <br>
-        <div class="row">
+            <br>
             {{ form.captcha|as_crispy_field }}
-        </div>
-        <br>
-        <input type="Submit" class="btn btn-success" name="submit" value="Далее"/>
+            <br>
+            <div class='d-flex justify-content-end'><input type="Submit" class="btn-next" name="submit" value="Далее"/></div>
     </form>
 {% endblock content %}

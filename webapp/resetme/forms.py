@@ -6,7 +6,7 @@ from resetme.models import user
 
 class UserForm(forms.Form):
     username = forms.CharField(required=True, label = "Логин:", max_length=9, strip=True, validators=[RegexValidator(
-        '^[a-z]{5}$|^[a-z]{5}_.{3}$', message="Вы ввели некорректный логин!")], error_messages={'invalid': 'Вы ввели некорректный логин!'})
+        '^[a-z]{5}$|^[a-z]{5}_.{3}$', message="Вы ввели некорректный логин!")], error_messages={'invalid': 'Вы ввели некорректный логин!'}, widget=forms.TextInput(attrs={"class":"form-field"}))
     captcha = CaptchaField(required=True, label='Пожалуйста, введите ответ:', error_messages={'invalid': 'Вы ввели неверный ответ!'})
 
 #DecimalField max_digits=6
