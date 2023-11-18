@@ -2,15 +2,17 @@
 
 {% load crispy_forms_tags %}
 
-
-
+{% block body %}
+    <body style="background-color: #27261D;"></body>
+    {{ block.super }}
+{% endblock body %}
 {% block content %}
-    <form action="" method="POST">
+    <form action="" method="POST" class="form-field">
         {% csrf_token %}
-            {{ form.username|as_crispy_field }}
-            <br>
-            {{ form.captcha|as_crispy_field }}
-            <br>
-            <div class='d-flex justify-content-end'><input type="Submit" class="btn-next" name="submit" value="Далее"/></div>
+        {{ form.username|as_crispy_field }}
+        <br>
+        {{ form.captcha|as_crispy_field }}
+        <br>
+        <div class='d-flex justify-content-end'><input type="Submit" class="btn-next" name="submit" value="Далее"/></div>
     </form>
 {% endblock content %}

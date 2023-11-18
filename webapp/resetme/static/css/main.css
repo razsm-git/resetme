@@ -1,13 +1,36 @@
-body {
-    background-color: #2A4948
+* {
+    margin: 0;
+    padding: 0;
+  }
+  html,
+  body {
+    height: 100%;
+  }
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .content {
+    flex: 1 0 auto;
+  }
+.footer {
+    flex: 0 0 auto;
+    color: #828282;
+    font: 16px "Cormorant";
+  }
+.footer-line {
+    color: #828282
 }
 
 .btn-next {
     display: inline-block;
-    width: 100px;
+    width: auto;
+    padding-left: 7%;
+    padding-right: 7%;
     height: 50px;
     line-height: 50px;
-    font: 20px "Cormorant";
+    font: 25px "Cormorant";
     text-align: center;
     text-decoration: none;
     outline: none;
@@ -33,4 +56,14 @@ body {
 
   .form-field {
     color: #FFFFFF;
+    font: 25px "Cormorant";
+  }
+
+  .text-on-site {
+    color: #FFFFFF;
+    font: 25px "Cormorant";
+  }
+  .error {
+    color: #e2083d;
+    font: 25px "Cormorant";
   }

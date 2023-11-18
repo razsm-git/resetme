@@ -2,17 +2,19 @@
 
 {% load crispy_forms_tags %}
 
+{% block body %}
+    <body style="background-color: #2A4948;"></body>
+    {{ block.super }}
+{% endblock body %}
 {% block content %}
-    <h4>Выберите домен из списка</h4>
-    <form action="" method="POST">
+    <form action="" method="POST" class="form-field">
         {% csrf_token %}
-        <div class="row">
-            {{ form.domain|as_crispy_field }}
-        </div>
+        {{ form.domain|as_crispy_field }}
         <br>
         {% if error_message %}
-            <h5 class="text-danger">{{ error_message }}</h5>
+            <h5 class="error">{{ error_message }}</h5>
+            <br>
         {% endif %}
-        <input type="Submit" class="btn btn-success" name="submit" value="Далее"/>
+        <div class='d-flex justify-content-end'><input type="Submit" class="btn-next" name="submit" value="Далее"/></div>
     </form>
 {% endblock content %}

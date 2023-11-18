@@ -2,10 +2,14 @@
 
 {% load crispy_forms_tags %}
 
-{% block header %}
-{% endblock header %}
+{% block body %}
+    <body style="background-color: #A4796B;"></body>
+    {{ block.super }}
+{% endblock body %}
 
 {% block content %}
-    <h4>Пароль успешно обновлен. Изменения будут применены в течении 5 минут</h4>
-    <h4>Удачного дня, {{ givenName }}!</h4>
+    <div class="text-on-site">
+        <p>Пароль успешно обновлен. Изменения будут применены в течении 5 минут.</p>
+        <p>Удачного дня, {{ givenName }}!</p>
+    </div>
 {% endblock content %}
