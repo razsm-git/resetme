@@ -9,7 +9,6 @@ class UserForm(forms.Form):
         '^[a-z]{5}$|^[a-z]{5}_.{3}$', message="Вы ввели некорректный логин!")], error_messages={'invalid': 'Вы ввели некорректный логин!'})
     captcha = CaptchaField(required=True, label='Пожалуйста, введите ответ:', error_messages={'invalid': 'Вы ввели неверный ответ!'})
 
-#DecimalField max_digits=6
 class VerifyPhone(forms.Form):
     code = forms.CharField(required=False, label="", validators=[RegexValidator(
         '^[0-9]{6}$', message="Это не код подтверждения. Не пытайся хитрить.")], error_messages={'invalid': 'Вы ввели неверный код!'})

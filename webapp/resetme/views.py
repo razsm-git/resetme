@@ -174,7 +174,7 @@ def verify_phone(request):
                 send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
                 if form.is_valid():
                     code = form.cleaned_data.get("code")
-                    if int(send_code) == int(code):
+                    if code and int(send_code) == int(code):
                         context = {'form': form, 'submitbutton': submitbutton}
                         sms_code.objects.filter(session_id=session_id).delete()
                         return redirect("password")
@@ -193,14 +193,32 @@ def verify_phone(request):
                             sms_code.objects.filter(session_id=session_id).delete()
                             return HttpResponseForbidden()
                 else:
-                    context = {'form': form}
-                    return render(request, 'verify_phone.html', context)
+                    count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
+                    update_count_of_fails_code, created = sms_code.objects.update_or_create(
+                        session_id=session_id, 
+                        send_code=send_code, 
+                        defaults=count_of_fails_code
+                    )
+                    if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
+                        context = {'form': form, 'submitbutton': submitbutton}
+                        return render(request, 'verify_phone.html', context)
+                    else:
+                        request.session.flush()
+                        sms_code.objects.filter(session_id=session_id).delete()
+                        return HttpResponseForbidden()
+                    # context = {'form': form}
+                    # return render(request, 'verify_phone.html', context)
             if 'retry_code' in request.POST:
                 print('Кнопка Отправить код повторно - нажата.')
-                send_code_from_form(request, session_id)
-                form = VerifyPhone()
-                context = {'form': form}
-                return render(request, 'verify_phone.html', context)
+                send = send_code_from_form(request, session_id)
+                if send == 200:
+                    form = VerifyPhone()
+                    context = {'form': form, 'retry_code_message': 'Код отправлен повторно.'}
+                    return render(request, 'verify_phone.html', context)
+                else:
+                    form = VerifyPhone()
+                    context = {'form': form, 'error_code_message': 'При отправке кода произошла ошибка. Попробуйте ещё раз'}
+                    return render(request, 'verify_phone.html', context)
         elif request.method == 'GET':
             # Check if code was sended
             try:
@@ -228,17 +246,22 @@ def send_code_from_form(request, session_id):
     # Send code by sms
     mobile = request.session.get('data', None)['mobile']
     status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
-    sms_data = sms_code.objects.update_or_create(
-        session_id = session_id,
-        #created_at = datetime.now(),
-        status = status_code_sms,
-        count_of_fails_code = 0,
-        defaults={'send_code': send_code},
-    )
+    if status_code_sms == 200:
+        sms_data = sms_code.objects.update_or_create(
+            session_id = session_id,
+            defaults={'send_code': send_code, 'count_of_fails_code': 0, 'status': status_code_sms, 'created_at': datetime.now()},
+        )
+        return status_code_sms
+    else:
+        return status_code_sms
 
 def send_code_by_sms(login, password, phone, code):
-    req = requests.get(f"https://smsc.ru/sys/send.php?login={login}&psw={password}&phones={phone}&mes={code}")
-    return req.status_code
+    try:
+        req = requests.get(f"https://smsc.ru/sys/send.php?login={login}&psw={password}&phones={phone}&mes={code}")
+        return req.status_code
+    except Exception:
+        return 1
+
 
 def change_password(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):

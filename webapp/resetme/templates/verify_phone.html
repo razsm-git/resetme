@@ -1,6 +1,17 @@
 {% extends 'base.html' %}
 
+{% block doctype %}
+    <!doctype html>
+    {% load static %}
+    <html lang="ru">
+{% endblock doctype %}
+
 {% load crispy_forms_tags %}
+
+{% block head %}
+    <script src="{% static 'js/verify_phone.js' %}"></script>
+    {{ block.super }}
+{% endblock head %}
 
 {% block body %}
     <body style="background-color: #44503D;"></body>
@@ -15,16 +26,24 @@
         {{ form.code|as_crispy_field }}
         <br>
         {% if error_message %}
-            <h5 class="error">{{ error_message }}</h5>
+            <h5 class="error_msg">{{ error_message }}</h5>
             <br>
         {% endif %}
         <div class='d-flex justify-content-between'>
             <div>
-                <input type="Submit" class="btn-next" name="retry_code" value="Отправить код повторно"/>
+                <input type="Submit" class="btn-disabled" name="retry_code" id="retry_code" disabled title="Повторный код может быть отправлен не ранее, чем через 2 минуты" value="Отправить код повторно"/>
             </div>
             <div>
                 <input type="Submit" class="btn-next" name="submit" value="Далее"/>
             </div>
         </div>
+        {% if retry_code_message %}
+            <br>
+            <h5 class="info_msg">{{ retry_code_message }}</h5>
+        {% endif %}
+        {% if error_code_message %}
+            <br>
+            <h5 class="error_msg">{{ error_code_messagee }}</h5>
+        {% endif %}
     </form>
 {% endblock content %}

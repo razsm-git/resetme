@@ -53,6 +53,24 @@
      0 1px rgba(255,255,255,.08);
     color: #DADADA;
   }
+  .btn-disabled {
+    opacity: 0.6;
+    display: inline-block;
+    width: auto;
+    padding-left: 7%;
+    padding-right: 7%;
+    height: 50px;
+    line-height: 50px;
+    font: 25px "Cormorant";
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    border: none;
+    border-radius: 100px;
+    background: #1D1D1B;
+    color: #FFFFFF;
+    user-select: none;
+  }
 
   .form-field {
     color: #FFFFFF;
@@ -63,7 +81,11 @@
     color: #FFFFFF;
     font: 25px "Cormorant";
   }
-  .error {
+  .error_msg {
     color: #e2083d;
+    font: 25px "Cormorant";
+  }
+  .info_msg{
+    color: #22A928;
     font: 25px "Cormorant";
   }
