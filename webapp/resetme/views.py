@@ -12,16 +12,15 @@ from re import findall
 from os import urandom
 # For hash and salt pass
 import hashlib
-from resetme.models import user, sms_code, bruteforce
+from resetme.models import user
 from datetime import datetime, date
 #for test
-#import redis
-#from django.conf import settings
+import redis
 
 
 def index(request):
-    ### Для теста
-    #redis_storage = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
+    ### Для теста. Подключение к redis
+    r = redis.Redis(host=redis_host, port=redis_port, db=db)
     ###
     submitbutton = request.POST.get("submit")
     username = ''
@@ -33,11 +32,18 @@ def index(request):
     if request.method == 'GET':
         form = UserForm()
         context = {'form': form}
-        brute_force, created  = bruteforce.objects.update_or_create(
-                session_id = session_id,
-                count_of_fails_form = 0,
-                defaults={'created_at': datetime.now()}
-            )
+        # brute_force, created  = bruteforce.objects.update_or_create(
+        #         session_id = session_id,
+        #         count_of_fails_form = 0,
+        #         defaults={'created_at': datetime.now()}
+        #     )
+        #dict = {'count_of_fails_form': 0, 'created_at': datetime.now().strftime('%d/%m/%y %H:%M')}
+        #r.hmset(session_id, dict)
+        r.hset(session_id,'count_of_fails_form', 0)
+        r.hset(session_id, 'created_at', datetime.now().strftime('%d.%m.%y %H:%M'))
+        r.expire(session_id,redis_ttl)
+        print(session_id)
+        r.close()
         return render(request, 'index.html', context)
     elif request.method == 'POST':
         form = UserForm(request.POST or None)
@@ -45,23 +51,39 @@ def index(request):
             username = form.cleaned_data.get("username")
             request.session['data'] = {'username': username}
             try:
-                bruteforce.objects.filter(session_id = session_id).delete()
+                #bruteforce.objects.filter(session_id = session_id).delete()
+                ####redis
+                r.delete(session_id)
+                r.close()
             except Exception as ex:
                 pass
             return redirect("domain")
         else:
-            update_count_of_fails_form = {'count_of_fails_form': list(bruteforce.objects.filter(session_id=session_id).values_list
-            ('count_of_fails_form', flat=True))[0] + 1}
-            update_brute_force, update_created  = bruteforce.objects.update_or_create(
-                session_id = session_id,
-                defaults=update_count_of_fails_form
-            )
-            if update_count_of_fails_form['count_of_fails_form'] < count_of_fails_form_threshold:
+            # update_count_of_fails_form = {'count_of_fails_form': list(bruteforce.objects.filter(session_id=session_id).values_list
+            # ('count_of_fails_form', flat=True))[0] + 1}
+            # update_brute_force, update_created  = bruteforce.objects.update_or_create(
+            #     session_id = session_id,
+            #     defaults=update_count_of_fails_form
+            # )
+            ####redis
+            r.hincrby(session_id, 'count_of_fails_form', 1)
+            # if update_count_of_fails_form['count_of_fails_form'] < count_of_fails_form_threshold:
+            #     context = {'form': form}
+            #     return render(request, 'index.html', context)
+            # else:
+            #     request.session.flush()
+            #     bruteforce.objects.filter(session_id=session_id).delete()
+            #     return HttpResponseForbidden()
+            if int(r.hget(session_id, 'count_of_fails_form').decode()) < count_of_fails_form_threshold:
                 context = {'form': form}
+                r.close()
                 return render(request, 'index.html', context)
             else:
                 request.session.flush()
-                bruteforce.objects.filter(session_id=session_id).delete()
+                #bruteforce.objects.filter(session_id=session_id).delete()
+                ###redis
+                r.delete(session_id)
+                r.close()
                 return HttpResponseForbidden()
     
 def domain_choice(request):
@@ -165,81 +187,109 @@ def generate_code():
     
 def verify_phone(request):
     if search(r'http://127.0.0.1:8000/resetme/',request.META.get('HTTP_REFERER')):
+        r = redis.Redis(host=redis_host, port=redis_port, db=db)
         session_id = request.session._session_key
         if request.method == 'POST':
             if 'submit' in request.POST:
                 submitbutton = request.POST.get("submit")
                 code = ''
                 form = VerifyPhone(request.POST or None)
-                send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+                #send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+                try:
+                    send_code = r.hget(session_id, 'send_code').decode()
+                except Exception:
+                    send_code = False
                 if form.is_valid():
                     code = form.cleaned_data.get("code")
-                    if code and int(send_code) == int(code):
+                    if send_code and code and int(send_code) == int(code):
                         context = {'form': form, 'submitbutton': submitbutton}
-                        sms_code.objects.filter(session_id=session_id).delete()
+                        #sms_code.objects.filter(session_id=session_id).delete()
+                        r.delete(session_id)
+                        r.close()
                         return redirect("password")
                     else:
-                        count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
-                        update_count_of_fails_code, created = sms_code.objects.update_or_create(
-                            session_id=session_id, 
-                            send_code=send_code, 
-                            defaults=count_of_fails_code
-                        )
-                        if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
-                            context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!'}
+                        # count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
+                        # update_count_of_fails_code, created = sms_code.objects.update_or_create(
+                        #     session_id=session_id, 
+                        #     send_code=send_code, 
+                        #     defaults=count_of_fails_code
+                        # )
+                        ###redis
+                        r.hincrby(session_id, 'count_of_fails_code', 1)
+                        if int(r.ttl(session_id)) == -1:
+                            r.expire(session_id,redis_ttl_sms_code)
+                        # if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
+                        #     context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!'}
+                        #     return render(request, 'verify_phone.html', context)
+                        # else:
+                        #     request.session.flush()
+                        #     sms_code.objects.filter(session_id=session_id).delete()
+                        #     return HttpResponseForbidden()
+                        if int(r.hget(session_id, 'count_of_fails_code').decode()) < count_of_fails_code_threshold:
+                            r.close()
+                            context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!', 'redis_ttl_sms_code': redis_ttl_sms_code}
                             return render(request, 'verify_phone.html', context)
                         else:
                             request.session.flush()
-                            sms_code.objects.filter(session_id=session_id).delete()
+                            #sms_code.objects.filter(session_id=session_id).delete()
+                            r.delete(session_id)
+                            r.close()
                             return HttpResponseForbidden()
                 else:
-                    count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
-                    update_count_of_fails_code, created = sms_code.objects.update_or_create(
-                        session_id=session_id, 
-                        send_code=send_code, 
-                        defaults=count_of_fails_code
-                    )
-                    if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
-                        context = {'form': form, 'submitbutton': submitbutton}
+                    # count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
+                    # update_count_of_fails_code, created = sms_code.objects.update_or_create(
+                    #     session_id=session_id, 
+                    #     send_code=send_code, 
+                    #     defaults=count_of_fails_code
+                    # )
+                    ### redis
+                    r.hincrby(session_id, 'count_of_fails_code', 1)
+                    if int(r.hget(session_id, 'count_of_fails_code').decode()) < count_of_fails_code_threshold:
+                        context = {'form': form, 'submitbutton': submitbutton, 'redis_ttl_sms_code': redis_ttl_sms_code}
                         return render(request, 'verify_phone.html', context)
                     else:
                         request.session.flush()
-                        sms_code.objects.filter(session_id=session_id).delete()
+                        #sms_code.objects.filter(session_id=session_id).delete()
+                        r.delete(session_id)
+                        r.close()
                         return HttpResponseForbidden()
                     # context = {'form': form}
                     # return render(request, 'verify_phone.html', context)
             if 'retry_code' in request.POST:
                 print('Кнопка Отправить код повторно - нажата.')
-                send = send_code_from_form(request, session_id)
+                send = send_code_from_form(request, session_id, r=r)
                 if send == 200:
                     form = VerifyPhone()
-                    context = {'form': form, 'retry_code_message': 'Код отправлен повторно.'}
+                    context = {'form': form, 'retry_code_message': 'Код отправлен повторно.', 'redis_ttl_sms_code': redis_ttl_sms_code}
                     return render(request, 'verify_phone.html', context)
                 else:
                     form = VerifyPhone()
-                    context = {'form': form, 'error_code_message': 'При отправке кода произошла ошибка. Попробуйте ещё раз'}
+                    context = {'form': form, 'error_code_message': 'При отправке кода произошла ошибка. Попробуйте ещё раз', 'redis_ttl_sms_code': redis_ttl_sms_code}
                     return render(request, 'verify_phone.html', context)
         elif request.method == 'GET':
             # Check if code was sended
             try:
-                code_in_db = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+                #code_in_db = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
+                #code_in_db_status = 0
+                code_in_db = int(r.hget(session_id, 'send_code').decode())
+                r.close()
                 code_in_db_status = 0
             except Exception:
                 code_in_db_status = 1
             if code_in_db_status == 0:
                 form = VerifyPhone()
-                context = {'form': form}
+                context = {'form': form, 'redis_ttl_sms_code': redis_ttl_sms_code}
                 return render(request, 'verify_phone.html', context)
             else:
-                send_code_from_form(request, session_id)
+                send_code_from_form(request, session_id, r=r)
                 form = VerifyPhone()
-                context = {'form': form}
+                context = {'form': form, 'redis_ttl_sms_code': redis_ttl_sms_code}
                 return render(request, 'verify_phone.html', context)
     else:
         request.session.flush()
         return HttpResponseForbidden()
     
-def send_code_from_form(request, session_id):
+def send_code_from_form(request, session_id, r):
     # Generate random code
     send_code = generate_code()
     print(f'Отправленный код: {send_code}')
@@ -247,10 +297,16 @@ def send_code_from_form(request, session_id):
     mobile = request.session.get('data', None)['mobile']
     status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
     if status_code_sms == 200:
-        sms_data = sms_code.objects.update_or_create(
-            session_id = session_id,
-            defaults={'send_code': send_code, 'count_of_fails_code': 0, 'status': status_code_sms, 'created_at': datetime.now()},
-        )
+        # sms_data = sms_code.objects.update_or_create(
+        #     session_id = session_id,
+        #     defaults={'send_code': send_code, 'count_of_fails_code': 0, 'status': status_code_sms, 'created_at': datetime.now()},
+        # )
+        r.hset(session_id,'send_code', send_code)
+        r.hset(session_id,'count_of_fails_code', 0)
+        r.hset(session_id,'status', status_code_sms)
+        r.hset(session_id, 'created_at', datetime.now().strftime('%d.%m.%y %H:%M'))
+        r.expire(session_id,redis_ttl_sms_code)
+        r.close()
         return status_code_sms
     else:
         return status_code_sms

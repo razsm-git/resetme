@@ -19,14 +19,14 @@ class user(models.Model):
 ]
     domain = models.CharField(verbose_name="Выберите домен из списка:", max_length=14, choices=domain_list, default='your_domain')
 
-class sms_code(models.Model):
-    session_id = models.CharField()
-    send_code = models.CharField(max_length=6,validators=[RegexValidator(r'^[0-9]{6}$')])
-    created_at = models.DateTimeField(default=datetime.now())
-    count_of_fails_code = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])
-    status = models.CharField(max_length=100)
+# class sms_code(models.Model):
+#     session_id = models.CharField()
+#     send_code = models.CharField(max_length=6,validators=[RegexValidator(r'^[0-9]{6}$')])
+#     created_at = models.DateTimeField(default=datetime.now())
+#     count_of_fails_code = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])
+#     status = models.CharField(max_length=100)
 
-class bruteforce(models.Model):
-    session_id = models.CharField()
-    created_at = models.DateTimeField(default=datetime.now())
-    count_of_fails_form = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])
+# class bruteforce(models.Model):
+#     session_id = models.CharField()
+#     created_at = models.DateTimeField(default=datetime.now())
+#     count_of_fails_form = models.SmallIntegerField(default=0,validators=[MinValueValidator(0), MaxValueValidator(2)])

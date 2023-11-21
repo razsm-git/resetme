@@ -148,10 +148,6 @@ CAPTCHA_TIMEOUT = 1
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
-#Redis settings
-# REDIS_HOST = 'localhost'
-# REDIS_PORT = 6379
-
 # CACHES = {
 #     "default": {
 #         "BACKEND": "django_redis.cache.RedisCache",

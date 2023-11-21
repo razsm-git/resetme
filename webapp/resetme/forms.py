@@ -22,6 +22,3 @@ class DomainForm(ModelForm):
 class ChangePassword(forms.Form):
      new_password = forms.CharField(required=True, label="Введите пароль:", widget=forms.PasswordInput)
      confirm_new_password = forms.CharField(required=True, label="Подтверждение пароля:", widget=forms.PasswordInput)
-
-
-# используется ли help_text ? или только в моделях?
