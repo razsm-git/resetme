@@ -33,7 +33,7 @@ body {
     padding-right: 7%;
     height: 50px;
     line-height: 50px;
-    font: 25px "Cormorant";
+    font: 26px "Cormorant";
     text-align: center;
     text-decoration: none;
     outline: none;
@@ -64,7 +64,7 @@ body {
     padding-right: 7%;
     height: 50px;
     line-height: 50px;
-    font: 25px "Cormorant";
+    font: 26px "Cormorant";
     text-align: center;
     text-decoration: none;
     outline: none;
@@ -77,18 +77,51 @@ body {
 
   .form-field {
     color: #FFFFFF;
-    font: 25px "Cormorant";
+    font: 26px "Cormorant";
   }
 
   .text-on-site {
     color: #FFFFFF;
-    font: 25px "Cormorant";
+    font: 26px "Cormorant";
   }
   .error_msg {
     color: #e2083d;
-    font: 25px "Cormorant";
+    font: 26px "Cormorant";
   }
   .info_msg{
     color: #22A928;
-    font: 25px "Cormorant";
+    font: 26px "Cormorant";
   }
+
+  [data-tooltip] {
+    position: relative; /* Относительное позиционирование */
+    cursor: help;
+    margin: 0; 
+   }
+  [data-tooltip]::after {
+    content: attr(data-tooltip); /* Выводим текст */
+    position: absolute; /* Абсолютное позиционирование */
+    width: 300px; /* Ширина подсказки */
+    left: 2em; 
+    background: #1D1D1B; /* Синий цвет фона */
+    color: #FFFFFF; /* Цвет текста */
+    padding: 8px 16px; /* Поля вокруг текста */
+    pointer-events: none; /* Подсказка */
+    opacity: 0; /* Подсказка невидима */
+    /*transition: 1s; /* Время появления подсказки */
+    transition: all 0.4s ease-in-out;
+    border-radius: 8px;
+    font: 18px "Golos Txt";
+  }
+  [data-tooltip]:hover::after {
+    opacity: 1; /* Показываем подсказку */
+    /* Положение подсказки */
+    left: 3em;
+   }
+   #pass {
+    width: 32px;
+    height: 32px;
+   }
+   .captcha {
+    margin-bottom: 10px;
+   }

@@ -20,5 +20,5 @@ class DomainForm(ModelForm):
         fields = ["domain"]
 
 class ChangePassword(forms.Form):
-     new_password = forms.CharField(required=True, label="Введите пароль:", widget=forms.PasswordInput)
+     new_password = forms.CharField(required=True, label="Введите новый пароль:", widget=forms.PasswordInput)
      confirm_new_password = forms.CharField(required=True, label="Подтверждение пароля:", widget=forms.PasswordInput)

@@ -1,9 +1,8 @@
 {% extends 'base.html' %}
 
 {% block doctype %}
-    <!doctype html>
     {% load static %}
-    <html lang="ru">
+    {{ block.super }}
 {% endblock doctype %}
 
 {% load crispy_forms_tags %}
@@ -19,13 +18,19 @@
 {% endblock body %}
 {% block content %}
     <div class="text-on-site"> 
-        <p>Введите код подтверждения, направленный Вам на корпоративный номер телефона в виде смс сообщения.</p>
-        <p>Обратите внимание, отправленный код действителен в течении {{ redis_ttl_sms_code }} секунд.</p>
-        <p>Запросить код повторно можно по истечении указанного времени.</p>
+        <p>Введите код подтверждения, направленный Вам на корпоративный номер телефона в виде смс сообщения:</p>
     </div>   
     <form action="" method="POST" class="form-field">
         {% csrf_token %}
-        {{ form.code|as_crispy_field }}
+        <div class='d-flex'>
+            <div class="flex-grow-1">
+                {{ form.code|as_crispy_field }}
+            </div>
+            <div>
+                <p data-tooltip="Обратите внимание, отправленный код действителен в течении 1200 секунд. Запросить код повторно можно по истечении указанного времени."><a><img src="{% static 'images/question.svg' %}" width="32" 
+                    height="32"></a></p>
+            </div>
+        </div>
         <br>
         {% if error_message %}
             <h5 class="error_msg">{{ error_message }}</h5>
