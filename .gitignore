@@ -102,3 +102,6 @@ local_settings.py
 
 .env
 db.sqlite3
+
+## Collect static ###
+staticfiles/

@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-from os import sys
+from os import sys, path
 sys.path.append("/root/resetme")
 from secret import *
 
@@ -23,13 +23,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = ''your_secret_key_here''
+SECRET_KEY = secret_key_django
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
-
+## Нужно исправить
+ALLOWED_HOSTS = [''your_site_name_here'']
 
 # Application definition
 
@@ -77,21 +77,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'webapp.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-# sqlite
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-# postgresql
+# Database postgresql
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'resetme_db',
-        'USER': 'resetme_user',
+        'NAME': resetme_db,
+        'USER': resetme_db_user,
         'PASSWORD': resetme_db_pass,
         'HOST': 'localhost',
         'PORT': '',
@@ -133,7 +124,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+#Collectstatic find files here
+STATICFILES_DIRS = [
+    path.join(BASE_DIR, "resetme/static"),
+]
+# Collectstatic copy files here
+STATIC_ROOT = path.join(BASE_DIR, 'staticfiles/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -148,6 +145,7 @@ CAPTCHA_TIMEOUT = 1
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
+
 # CACHES = {
 #     "default": {
 #         "BACKEND": "django_redis.cache.RedisCache",
@@ -161,13 +159,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
 # # Cache time to live is 15 minutes.
 # CACHE_TTL = 60 * 15
-
-# #sms.ru
-# SMS_RU = {
-#     "API_ID": api_id, # если указан API ключ, логин и пароль пропускаем
-#     "TEST": True, # отправка смс в тестовом режиме, по умолчанию False
-#     #"SENDER": 'your_login_here', # отправитель - необязательно поле
-# }
 
 
 #### ONLY FOR DEBUG SQL QUERY

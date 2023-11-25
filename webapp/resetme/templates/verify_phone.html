@@ -27,8 +27,13 @@
                 {{ form.code|as_crispy_field }}
             </div>
             <div>
-                <p data-tooltip="Обратите внимание, отправленный код действителен в течении 1200 секунд. Запросить код повторно можно по истечении указанного времени."><a><img src="{% static 'images/question.svg' %}" width="32" 
-                    height="32"></a></p>
+                <p data-tooltip="Обратите внимание, отправленный код действителен в течении 1200 секунд. Запросить код повторно можно по истечении указанного времени.">
+                    <a сlass="tooltip-link">
+                        <svg class="tooltip-icon" width="32" height="32" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                            <path class="tooltip-path" d="M6.481 9.64c0-1.203.71-2.046 1.52-2.836 3.474-2.835-1.853-3.617-2.308-.964L2.352 4.124C3.499 1.884 5.857 1 8.208 1c2.246 0 5.144.907 5.144 3.683 0 1.466-.852 2.472-1.877 3.356-.458.41-1.127.907-1.127 1.6H6.481zM8.415 15c-1.286 0-2.478-.92-2.478-2.314 0-1.396 1.198-2.275 2.478-2.275 1.28 0 2.478.879 2.478 2.275C10.893 14.079 9.7 15 8.415 15z"></path>
+                        </svg>
+                    </a>
+                </p>
             </div>
         </div>
         <br>
@@ -36,12 +41,14 @@
             <h5 class="error_msg">{{ error_message }}</h5>
             <br>
         {% endif %}
-        <div class='d-flex justify-content-between'>
-            <div>
+        <div class='d-flex justify-content-between flex-wrap'>
+            <div class="flex-grow-1">
                 <input type="Submit" class="btn-disabled" name="retry_code" id="retry_code" disabled title="Повторный код может быть отправлен не ранее, чем через 2 минуты" value="Отправить код повторно"/>
             </div>
-            <div>
+            <div class="btn-next-div">
                 <input type="Submit" class="btn-next" name="submit" value="Далее"/>
+            </div>
+            <div class="pass">
             </div>
         </div>
         {% if retry_code_message %}

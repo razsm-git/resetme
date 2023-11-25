@@ -10,6 +10,9 @@ django-simple-captcha
 django-crispy-forms
 crispy-bootstrap4
 #django_redis ?
+###debian packages
+gunicorn
+python3-psycopg2
 ###
 
 # Условия в секции #passwords файла vars.py проверяются функцией findall из re

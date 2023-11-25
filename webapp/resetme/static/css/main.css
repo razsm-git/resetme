@@ -6,6 +6,10 @@ html,
 body {
   height: 100%;
 }
+.row {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
 .wrapper {
   display: flex;
   flex-direction: column;
@@ -42,6 +46,9 @@ body {
     background: #1D1D1B;
     color: #FFFFFF;
     user-select: none;
+  }
+  .btn-next-div {
+    padding-right: 2%;
   } 
   .btn-next:hover {
     color: #CBCBCB;
@@ -118,10 +125,13 @@ body {
     /* Положение подсказки */
     left: 3em;
    }
-   #pass {
+   .pass {
     width: 32px;
     height: 32px;
    }
    .captcha {
     margin-bottom: 10px;
+   }
+   .tooltip-icon {
+    fill: #FFFFFF;
    }
