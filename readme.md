@@ -27,3 +27,5 @@ python3-psycopg2
 # Если подключаться к ldaps с самоподписным сертификатом, то необходимо в конфигурации ldap на клиенте прописать:
 #/etc/ldap/ldap.conf
 TLS_REQCERT never
+
+#django session clear

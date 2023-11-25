@@ -1,5 +1,5 @@
 from django import forms
-from django.core.validators import RegexValidator, MinLengthValidator
+from django.core.validators import RegexValidator
 from captcha.fields import CaptchaField
 from django.forms import ModelForm
 from resetme.models import user

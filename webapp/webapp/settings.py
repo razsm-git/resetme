@@ -84,8 +84,8 @@ DATABASES = {
         'NAME': resetme_db,
         'USER': resetme_db_user,
         'PASSWORD': resetme_db_pass,
-        'HOST': 'localhost',
-        'PORT': '',
+        'HOST': resetme_db_host,
+        'PORT': resetme_db_port,
     }
 }
 

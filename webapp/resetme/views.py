@@ -14,14 +14,12 @@ from os import urandom
 import hashlib
 from resetme.models import user
 from datetime import datetime, date
-#for test
 import redis
 
 
 def index(request):
-    ### Для теста. Подключение к redis
+    # Redis connection
     r = redis.Redis(host=redis_host, port=redis_port, db=db)
-    ###
     submitbutton = request.POST.get("submit")
     username = ''
     if not request.session._session_key:
@@ -32,13 +30,6 @@ def index(request):
     if request.method == 'GET':
         form = UserForm()
         context = {'form': form}
-        # brute_force, created  = bruteforce.objects.update_or_create(
-        #         session_id = session_id,
-        #         count_of_fails_form = 0,
-        #         defaults={'created_at': datetime.now()}
-        #     )
-        #dict = {'count_of_fails_form': 0, 'created_at': datetime.now().strftime('%d/%m/%y %H:%M')}
-        #r.hmset(session_id, dict)
         r.hset(session_id,'count_of_fails_form', 0)
         r.hset(session_id, 'created_at', datetime.now().strftime('%d.%m.%y %H:%M'))
         r.expire(session_id,redis_ttl)
@@ -51,37 +42,19 @@ def index(request):
             username = form.cleaned_data.get("username")
             request.session['data'] = {'username': username}
             try:
-                #bruteforce.objects.filter(session_id = session_id).delete()
-                ####redis
                 r.delete(session_id)
                 r.close()
             except Exception as ex:
                 pass
             return redirect("domain")
         else:
-            # update_count_of_fails_form = {'count_of_fails_form': list(bruteforce.objects.filter(session_id=session_id).values_list
-            # ('count_of_fails_form', flat=True))[0] + 1}
-            # update_brute_force, update_created  = bruteforce.objects.update_or_create(
-            #     session_id = session_id,
-            #     defaults=update_count_of_fails_form
-            # )
-            ####redis
             r.hincrby(session_id, 'count_of_fails_form', 1)
-            # if update_count_of_fails_form['count_of_fails_form'] < count_of_fails_form_threshold:
-            #     context = {'form': form}
-            #     return render(request, 'index.html', context)
-            # else:
-            #     request.session.flush()
-            #     bruteforce.objects.filter(session_id=session_id).delete()
-            #     return HttpResponseForbidden()
             if int(r.hget(session_id, 'count_of_fails_form').decode()) < count_of_fails_form_threshold:
                 context = {'form': form}
                 r.close()
                 return render(request, 'index.html', context)
             else:
                 request.session.flush()
-                #bruteforce.objects.filter(session_id=session_id).delete()
-                ###redis
                 r.delete(session_id)
                 r.close()
                 return HttpResponseForbidden()
@@ -194,7 +167,6 @@ def verify_phone(request):
                 submitbutton = request.POST.get("submit")
                 code = ''
                 form = VerifyPhone(request.POST or None)
-                #send_code = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
                 try:
                     send_code = r.hget(session_id, 'send_code').decode()
                 except Exception:
@@ -203,58 +175,32 @@ def verify_phone(request):
                     code = form.cleaned_data.get("code")
                     if send_code and code and int(send_code) == int(code):
                         context = {'form': form, 'submitbutton': submitbutton}
-                        #sms_code.objects.filter(session_id=session_id).delete()
                         r.delete(session_id)
                         r.close()
                         return redirect("password")
                     else:
-                        # count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
-                        # update_count_of_fails_code, created = sms_code.objects.update_or_create(
-                        #     session_id=session_id, 
-                        #     send_code=send_code, 
-                        #     defaults=count_of_fails_code
-                        # )
-                        ###redis
                         r.hincrby(session_id, 'count_of_fails_code', 1)
                         if int(r.ttl(session_id)) == -1:
                             r.expire(session_id,redis_ttl_sms_code)
-                        # if count_of_fails_code['count_of_fails_code'] < count_of_fails_code_threshold:
-                        #     context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!'}
-                        #     return render(request, 'verify_phone.html', context)
-                        # else:
-                        #     request.session.flush()
-                        #     sms_code.objects.filter(session_id=session_id).delete()
-                        #     return HttpResponseForbidden()
                         if int(r.hget(session_id, 'count_of_fails_code').decode()) < count_of_fails_code_threshold:
                             r.close()
                             context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!', 'redis_ttl_sms_code': redis_ttl_sms_code}
                             return render(request, 'verify_phone.html', context)
                         else:
                             request.session.flush()
-                            #sms_code.objects.filter(session_id=session_id).delete()
                             r.delete(session_id)
                             r.close()
                             return HttpResponseForbidden()
                 else:
-                    # count_of_fails_code = {'count_of_fails_code': list(sms_code.objects.filter(session_id=session_id).values_list('count_of_fails_code', flat=True))[0] + 1}
-                    # update_count_of_fails_code, created = sms_code.objects.update_or_create(
-                    #     session_id=session_id, 
-                    #     send_code=send_code, 
-                    #     defaults=count_of_fails_code
-                    # )
-                    ### redis
                     r.hincrby(session_id, 'count_of_fails_code', 1)
                     if int(r.hget(session_id, 'count_of_fails_code').decode()) < count_of_fails_code_threshold:
                         context = {'form': form, 'submitbutton': submitbutton, 'redis_ttl_sms_code': redis_ttl_sms_code}
                         return render(request, 'verify_phone.html', context)
                     else:
                         request.session.flush()
-                        #sms_code.objects.filter(session_id=session_id).delete()
                         r.delete(session_id)
                         r.close()
                         return HttpResponseForbidden()
-                    # context = {'form': form}
-                    # return render(request, 'verify_phone.html', context)
             if 'retry_code' in request.POST:
                 print('Кнопка Отправить код повторно - нажата.')
                 send = send_code_from_form(request, session_id, r=r)
@@ -269,8 +215,6 @@ def verify_phone(request):
         elif request.method == 'GET':
             # Check if code was sended
             try:
-                #code_in_db = list(sms_code.objects.filter(session_id=session_id).values_list('send_code', flat=True))[0]
-                #code_in_db_status = 0
                 code_in_db = int(r.hget(session_id, 'send_code').decode())
                 r.close()
                 code_in_db_status = 0
@@ -297,10 +241,6 @@ def send_code_from_form(request, session_id, r):
     mobile = request.session.get('data', None)['mobile']
     status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
     if status_code_sms == 200:
-        # sms_data = sms_code.objects.update_or_create(
-        #     session_id = session_id,
-        #     defaults={'send_code': send_code, 'count_of_fails_code': 0, 'status': status_code_sms, 'created_at': datetime.now()},
-        # )
         r.hset(session_id,'send_code', send_code)
         r.hset(session_id,'count_of_fails_code', 0)
         r.hset(session_id,'status', status_code_sms)
@@ -400,8 +340,6 @@ class PasswordValidator(object):
             today_changed = model_user.objects.filter(username=username, domain=domain, created_at__contains=today_date)
             if today_changed.count() >= conditions['change_per_day']:
                 return "Замечена подозрительная активность с участием вашего аккаунта. обратитесь в отдел ИТ для изменения пароля."
-            ###queryset = model_user.objects.filter(username=username).filter(domain=domain).filter(created_at__gte='2023-01-01').values()
-            #queryset = model_user.objects.filter(username=username, domain=domain).values_list('hash')
             for entry in history_of_change:
                 try:
                     comparison = hash_unsalt(password, entry.hash, entry.salt, algoritm, iter, dklen)

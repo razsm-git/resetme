@@ -110,7 +110,7 @@ body {
     position: absolute; /* Абсолютное позиционирование */
     width: 300px; /* Ширина подсказки */
     left: 2em; 
-    background: #1D1D1B; /* Синий цвет фона */
+    background: #1D1D1B; /* Цвет фона */
     color: #FFFFFF; /* Цвет текста */
     padding: 8px 16px; /* Поля вокруг текста */
     pointer-events: none; /* Подсказка */
