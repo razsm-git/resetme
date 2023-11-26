@@ -81,7 +81,7 @@ def domain_choice(request):
             if check_username['status'] == 0:
             # User exist and ready for verify phone by sms code
                 context = {'form': form, 'submitbutton': submitbutton}
-                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain, 'domain_var': domain_var}
+                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain, 'domain_var': domain_var, 'redis_ttl_sms_code': redis_ttl_sms_code}
                 return redirect("verify")
             elif check_username['status'] == 1:
                 error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'

@@ -18,6 +18,21 @@
         <br>
         {{ form.captcha|as_crispy_field }}
         <br>
-        <div class='d-flex justify-content-end'><input type="Submit" class="btn-next" name="submit" value="Далее"/></div>
+        <!--For desktop-->
+        <div class="d-none d-sm-block">
+            <div class='d-flex justify-content-end btn-next-div2'>
+                <div class="btn-next-div">
+                    <input type="Submit" class="btn-next" name="submit" value="Далее"/>
+                </div>
+            </div>
+        </div>
+        <!--For mobile-->
+        <div class="d-block d-sm-none">
+            <div class='d-flex'>
+                <div class="btn-next-div-mobile">
+                    <input type="Submit" class="btn-next-mobile" name="submit" value="Далее"/>
+                </div>
+            </div>
+        </div>
     </form>
 {% endblock content %}

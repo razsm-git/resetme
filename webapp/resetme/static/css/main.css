@@ -1,15 +1,22 @@
 * {
     margin: 0;
     padding: 0;
-  }
+}
 html,
 body {
   height: 100%;
 }
+/*Bootstrap styles overload*/
 .row {
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
+@media (min-width: 1400px) {
+  .col-xxl-5 {
+    max-width: 568px;
+  }
+}
+/**/
 .wrapper {
   display: flex;
   flex-direction: column;
@@ -20,12 +27,12 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  }
+}
 .footer {
     flex: 0 0 auto;
     color: #828282;
     font: 16px "Cormorant";
-  }
+}
 .footer-line {
     color: #828282
 }
@@ -33,8 +40,8 @@ body {
 .btn-next {
     display: inline-block;
     width: auto;
-    padding-left: 7%;
-    padding-right: 7%;
+    padding-left: 1em;
+    padding-right: 1em;
     height: 50px;
     line-height: 50px;
     font: 26px "Cormorant";
@@ -46,92 +53,162 @@ body {
     background: #1D1D1B;
     color: #FFFFFF;
     user-select: none;
-  }
-  .btn-next-div {
-    padding-right: 2%;
-  } 
-  .btn-next:hover {
-    color: #CBCBCB;
-    cursor: pointer;
-  }
-  .btn-next:active {
-    padding-bottom: 1px;
-    box-shadow:
-     inset rgba(0,0,0,1) 0 1px 3px,
-     inset rgba(0,0,0,.6) 0 -2px 5px,
-     inset rgba(252,255,255,.7) 0 2px 5px,
-     0 1px rgba(255,255,255,.08);
-    color: #DADADA;
-  }
-  .btn-disabled {
-    opacity: 0.6;
-    display: inline-block;
-    width: auto;
-    padding-left: 7%;
-    padding-right: 7%;
-    height: 50px;
-    line-height: 50px;
-    font: 26px "Cormorant";
-    text-align: center;
-    text-decoration: none;
-    outline: none;
-    border: none;
-    border-radius: 100px;
-    background: #1D1D1B;
-    color: #FFFFFF;
-    user-select: none;
-  }
+}
+.btn-next-mobile {
+  display: inline-block;
+  width: 100%;
+  padding-left: 7%;
+  padding-right: 7%;
+  height: 50px;
+  line-height: 50px;
+  font: 26px "Cormorant";
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  border: none;
+  border-radius: 100px;
+  background: #1D1D1B;
+  color: #FFFFFF;
+  user-select: none;
+}
+/*.btn-next-div {
+  padding-right: 2%;
+}
+.btn-next-div2{
+  margin-right: 3%;
+}*/
+.btn-next-div-mobile {
+  padding-right: 2%;
+  width: 100%;
+} 
+.btn-next:hover {
+  color: #CBCBCB;
+  cursor: pointer;
+}
+.btn-next:active {
+  padding-bottom: 1px;
+  box-shadow:
+    inset rgba(0,0,0,1) 0 1px 3px,
+    inset rgba(0,0,0,.6) 0 -2px 5px,
+    inset rgba(252,255,255,.7) 0 2px 5px,
+    0 1px rgba(255,255,255,.08);
+  color: #DADADA;
+}
+.btn-disabled {
+  opacity: 0.6;
+  display: inline-block;
+  width: auto;
+  padding-left: 1em;
+  padding-right: 1em;
+  height: 50px;
+  line-height: 50px;
+  font: 26px "Cormorant";
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  border: none;
+  border-radius: 100px;
+  background: #1D1D1B;
+  color: #FFFFFF;
+  user-select: none;
+}
+.btn-disabled-mobile {
+  opacity: 0.6;
+  display: inline-block;
+  width: 100%;
+  padding-left: 7%;
+  padding-right: 7%;
+  height: 50px;
+  line-height: 50px;
+  font: 26px "Cormorant";
+  text-align: center;
+  text-decoration: none;
+  outline: none;
+  border: none;
+  border-radius: 100px;
+  background: #1D1D1B;
+  color: #FFFFFF;
+  user-select: none;
+}
 
-  .form-field {
-    color: #FFFFFF;
-    font: 26px "Cormorant";
-  }
+.form-field {
+  color: #FFFFFF;
+  font: 26px "Cormorant";
+}
 
-  .text-on-site {
-    color: #FFFFFF;
-    font: 26px "Cormorant";
-  }
-  .error_msg {
-    color: #e2083d;
-    font: 26px "Cormorant";
-  }
-  .info_msg{
-    color: #22A928;
-    font: 26px "Cormorant";
-  }
+.text-on-site {
+  color: #FFFFFF;
+  font: 26px "Cormorant";
+}
+.error_msg {
+  color: #e2083d;
+  font: 26px "Cormorant";
+}
+.info_msg{
+  color: #22A928;
+  font: 26px "Cormorant";
+}
+/* For Desktop */
+.data-tooltip-desktop[data-tooltip] {
+  position: relative; /* Относительное позиционирование */
+  cursor: help;
+  margin: 0; 
+}
+.data-tooltip-desktop[data-tooltip]::after {
+  content: attr(data-tooltip); /* Выводим текст */
+  position: absolute; /* Абсолютное позиционирование */
+  width: 300px; /* Ширина подсказки */
+  left: 2em; 
+  background: #1D1D1B; /* Цвет фона */
+  color: #FFFFFF; /* Цвет текста */
+  padding: 8px 16px; /* Поля вокруг текста */
+  pointer-events: none; /* Подсказка */
+  opacity: 0; /* Подсказка невидима */
+  /*transition: 1s; /* Время появления подсказки */
+  transition: all 0.4s ease-in-out;
+  border-radius: 8px;
+  font: 18px "Golos Txt";
+}
+.data-tooltip-desktop[data-tooltip]:hover::after {
+  opacity: 1; /* Показываем подсказку */
+  /* Положение подсказки */
+  left: 3em;
+}
+/* For mobile */
+.data-tooltip-mobile[data-tooltip] {
+  position: relative; /* Относительное позиционирование */
+  cursor: help;
+  margin: 0; 
+}
+.data-tooltip-mobile[data-tooltip]::after {
+  content: attr(data-tooltip); /* Выводим текст */
+  position: absolute; /* Абсолютное позиционирование */
+  width: 300px; /* Ширина подсказки */
+  /*left: 20em; */
+  background: #1D1D1B; /* Цвет фона */
+  color: #FFFFFF; /* Цвет текста */
+  padding: 8px 16px; /* Поля вокруг текста */
+  pointer-events: none; /* Подсказка */
+  opacity: 0; /* Подсказка невидима */
+  /*transition: 1s; /* Время появления подсказки */
+  /*transition: all 0.4s ease-in;*/
+  border-radius: 8px;
+  font: 18px "Golos Txt";
+}
+.data-tooltip-mobile[data-tooltip]:hover::after {
+  opacity: 1; /* Показываем подсказку */
+  /* Положение подсказки */
+  left: -1000%;
+  bottom: -850%;
+}
 
-  [data-tooltip] {
-    position: relative; /* Относительное позиционирование */
-    cursor: help;
-    margin: 0; 
-   }
-  [data-tooltip]::after {
-    content: attr(data-tooltip); /* Выводим текст */
-    position: absolute; /* Абсолютное позиционирование */
-    width: 300px; /* Ширина подсказки */
-    left: 2em; 
-    background: #1D1D1B; /* Цвет фона */
-    color: #FFFFFF; /* Цвет текста */
-    padding: 8px 16px; /* Поля вокруг текста */
-    pointer-events: none; /* Подсказка */
-    opacity: 0; /* Подсказка невидима */
-    /*transition: 1s; /* Время появления подсказки */
-    transition: all 0.4s ease-in-out;
-    border-radius: 8px;
-    font: 18px "Golos Txt";
-  }
-  [data-tooltip]:hover::after {
-    opacity: 1; /* Показываем подсказку */
-    /* Положение подсказки */
-    left: 3em;
-   }
-   .pass {
-    width: 32px;
-    height: 32px;
-   }
-   .captcha {
-    margin-bottom: 10px;
-   }
-   .tooltip-icon {
-    fill: #FFFFFF;
-   }
+.pass {
+  width: 32px;
+  height: 32px;
+}
+.captcha {
+  margin-bottom: 10px;
+}
+.tooltip-icon {
+  fill: #FFFFFF;
+}
