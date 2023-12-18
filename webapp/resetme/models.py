@@ -15,5 +15,5 @@ class user(models.Model):
     domain_list = [
     ("your_domain", "your_domain"),
     ("your_domain", "your_domain"),
-]
+    ]
     domain = models.CharField(verbose_name="Выберите домен из списка:", max_length=14, choices=domain_list, default='your_domain')

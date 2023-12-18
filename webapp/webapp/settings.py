@@ -14,6 +14,7 @@ from pathlib import Path
 from os import sys, path
 sys.path.append("/root/resetme")
 from secret import *
+from vars import *
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django_session_timeout.middleware.SessionTimeoutMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -145,20 +147,32 @@ CAPTCHA_TIMEOUT = 1
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap4"
 
-
+#for django-redis-cache
+# SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 # CACHES = {
 #     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://127.0.0.1:6379/1",
+#         'BACKEND': 'redis_cache.RedisCache',
+#         'LOCATION': redis_sock,
 #         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient"
+#             'DB': 1,
 #         },
-#         "KEY_PREFIX": "resetme"
 #     }
 # }
 
-# # Cache time to live is 15 minutes.
-# CACHE_TTL = 60 * 15
+#for django-redis-sessions
+SESSION_ENGINE = 'redis_sessions.session'
+# SESSION_REDIS_UNIX_DOMAIN_SOCKET_PATH = redis_sock
+SESSION_REDIS = {
+    'unix_domain_socket_path': redis_sock,
+    'db': 0,
+    'prefix': 'resetme_session',
+    'socket_timeout': 1,
+    'retry_on_timeout': False
+}
+
+
+# Cache time to live is 15 minutes.
+#CACHE_TTL = 60 * 4
 
 
 #### ONLY FOR DEBUG SQL QUERY

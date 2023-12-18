@@ -60,7 +60,7 @@ def index(request):
                 return HttpResponseForbidden()
     
 def domain_choice(request):
-    if search(r'https://'your_site_name_here'/resetme/',request.META.get('HTTP_REFERER')):
+    if search('your_url',request.META.get('HTTP_REFERER')):
         submitbutton = request.POST.get("submit")
         domain = ''
         form = DomainForm(request.POST or None)
@@ -159,7 +159,7 @@ def generate_code():
     return random_code
     
 def verify_phone(request):
-    if search(r'https://'your_site_name_here'/resetme/',request.META.get('HTTP_REFERER')):
+    if search('your_url',request.META.get('HTTP_REFERER')):
         r = redis.Redis(host=redis_host, port=redis_port, db=db)
         session_id = request.session._session_key
         if request.method == 'POST':
@@ -260,7 +260,7 @@ def send_code_by_sms(login, password, phone, code):
 
 
 def change_password(request):
-    if search(r'https://'your_site_name_here'/resetme/',request.META.get('HTTP_REFERER')):
+    if search('your_url',request.META.get('HTTP_REFERER')):
         data = request.session.get('data', None)
         if request.method == 'POST':
             submitbutton = request.POST.get("submit")
@@ -354,7 +354,7 @@ class PasswordValidator(object):
                 pass
 
 def success(request):
-    if search(r'https://'your_site_name_here'/resetme/',request.META.get('HTTP_REFERER')):
+    if search('your_url',request.META.get('HTTP_REFERER')):
         context = {'givenName': request.session.get('data', None)['givenName']}
         request.session.flush()
         return render(request, 'success.html', context)
