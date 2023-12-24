@@ -33,7 +33,6 @@ def index(request):
         r.hset(session_id,'count_of_fails_form', 0)
         r.hset(session_id, 'created_at', datetime.now().strftime('%d.%m.%y %H:%M'))
         r.expire(session_id,redis_ttl)
-        print(session_id)
         r.close()
         return render(request, 'index.html', context)
     elif request.method == 'POST':
@@ -121,12 +120,9 @@ class check_ldap_user(object):
     def check_user(username, domain):
         search_scope = ldap.SCOPE_SUBTREE
         search_filter = domain['search_filter'].format(username)
-        print(search_filter)
         base_dn = domain['base_dn']
-        print(base_dn)
         retrieve_attributes = domain['retrieve_attributes']
         ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
-        print(ldap_check_user)
         if ldap_check_user:
             # If user exists and enabled in LDAP
             status = 0
@@ -202,7 +198,6 @@ def verify_phone(request):
                         r.close()
                         return HttpResponseForbidden()
             if 'retry_code' in request.POST:
-                print('Кнопка Отправить код повторно - нажата.')
                 send = send_code_from_form(request, session_id, r=r)
                 if send == 200:
                     form = VerifyPhone()
@@ -236,7 +231,6 @@ def verify_phone(request):
 def send_code_from_form(request, session_id, r):
     # Generate random code
     send_code = generate_code()
-    print(f'Отправленный код: {send_code}')
     # Send code by sms
     mobile = request.session.get('data', None)['mobile']
     status_code_sms = send_code_by_sms(sms_login, sms_password, mobile, send_code)
