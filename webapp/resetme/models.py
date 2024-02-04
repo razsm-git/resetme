@@ -8,7 +8,7 @@ class user(models.Model):
     first_name = models.CharField(max_length=30)
     phone = models.CharField(max_length=12, validators=[RegexValidator(r'^+7[0-9]{10}$')])
     status = models.CharField(max_length=100)
-    created_at = models.DateTimeField(default=datetime.now())
+    created_at = models.DateTimeField(auto_now=True)
     hash = models.BinaryField(max_length=300,editable=True)
     salt = models.BinaryField(max_length=300,editable=True)
     # First element save in DB, second element view in form field
