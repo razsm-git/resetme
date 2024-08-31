@@ -1,0 +1,20 @@
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+Type=notify
+User=root
+# Path to directory with manage.py
+WorkingDirectory=/resetme/webapp
+ExecStart=/usr/bin/gunicorn --bind unix:/run/gunicorn.sock -c /resetme/gunicorn.conf.py
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+User=gunicorn
+Group=gunicorn
+
+[Install]
+WantedBy=multi-user.target

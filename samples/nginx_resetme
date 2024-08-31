@@ -1,0 +1,72 @@
+server {
+		listen 80;
+		listen 443 default_server ssl;
+        # Your site name (url) here
+		server_name example.ru www.example.ru;
+        # Path to you cert files
+		ssl_certificate	/etc/ssl/certificate.cer;
+		ssl_certificate_key	/etc/ssl/private.key;
+        # Path to nginx logs
+		access_log /var/log/nginx/resetme.access.log;
+		error_log /var/log/nginx/resetme.error.log;
+
+		ssl_session_cache       shared:SSL:10m;
+		ssl_session_timeout     10m;
+
+		if ($scheme != https) {
+		return 301 https://$server_name$request_uri;
+		}
+        # Your site name (url) here
+		if ($host !~ ^(example.ru|www.example.ru)$ ) {
+                        return 444;
+		}
+		if ($request_method !~ ^(GET|HEAD|POST)$ ) {
+			return 444;
+		}
+		# Block download managers
+		if ($http_user_agent ~* LWP::Simple|BBBike|wget) {
+			return 403;
+		}
+		# Block some of bots typy
+		if ($http_user_agent ~* msnbot|scrapbot) {
+			return 403;
+		}
+        # Path to your static files
+		location /resetme/static/ {
+			alias /resetme/webapp/staticfiles;
+		}
+
+		location / {
+			#include proxy_params;
+			proxy_pass http://unix:/run/gunicorn.sock;
+			proxy_set_header Host $http_host;
+			proxy_set_header X-Forwarded-Proto $scheme;
+			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+			# Max allowed connections from same ip address
+			limit_conn slimits 5;
+		}
+		location /admin {
+			# Allow only local network
+			allow 172.16.0.0/16;
+			# Denied other
+			deny all;
+		}
+		# custom settings
+		server_tokens off;
+		# Max buffer size for client requests body
+		client_body_buffer_size 1K;
+		# Max buffer size for storing client request headers
+		client_header_buffer_size 1k;
+		# Max size of the client request body, specified in the Content-Length header field
+		client_max_body_size 1k;
+		# Count and size of buffers for reading large client request header
+		large_client_header_buffers 4 8k;
+		# Timeout while reading client request body
+		client_body_timeout 10;
+		# Timeout while reading client request header
+		client_header_timeout 10;
+		# Timeout after which the keep-alive connection with the client will not be closed from the server side
+		keepalive_timeout 5 5;
+		# Timeout when sending response to client
+		send_timeout 10;
+}

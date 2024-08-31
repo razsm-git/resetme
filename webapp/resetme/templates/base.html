@@ -6,7 +6,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Страница сброса пароля</title>
+        <title>{{ title_name }}</title>
         <!--Favicon-->
         <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.svg' %}">
         <!-- Bootstrap CSS local-->
@@ -47,7 +47,7 @@
               {% block footer %}
                   <hr class="footer-line">
                   <img src="{% static 'images/logo2.svg' %}"  alt="Ваш браузер не поддерживает SVG" width="200px" height="200px">
-                  <p>© {% now "Y" %} Волховец</p>
+                  <p>© {% now "Y" %} {{ company_name }}</p>
               {% endblock footer %}
             </div>
           </div>

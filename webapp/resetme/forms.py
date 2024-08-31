@@ -2,8 +2,9 @@ from django import forms
 from django.core.validators import RegexValidator
 from captcha.fields import CaptchaField
 from django.forms import ModelForm
-from resetme.models import user
+from resetme.models import domain_choise
 from vars import login_validator, sms_code_validator
+
 
 class UserForm(forms.Form):
     username = forms.CharField(required=True, label = "Логин:", max_length=9, strip=True, validators=[RegexValidator(
@@ -17,7 +18,7 @@ class VerifyPhone(forms.Form):
 # Import from model    
 class DomainForm(ModelForm):
     class Meta:
-        model = user
+        model = domain_choise
         fields = ["domain"]
 
 class ChangePassword(forms.Form):

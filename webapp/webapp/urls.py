@@ -26,4 +26,5 @@ urlpatterns = [
     path("resetme/", include("resetme.urls")),
     path('captcha/', include('captcha.urls')),
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
+    path("admin/", admin.site.urls, name="admin"),
 ]

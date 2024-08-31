@@ -12,7 +12,7 @@ from re import findall
 from os import urandom
 # For hash and salt pass
 import hashlib
-from resetme.models import user
+from resetme.models import user, domain
 from datetime import datetime, date
 import redis
 
@@ -29,7 +29,7 @@ def index(request):
     session_id = request.session.session_key
     if request.method == 'GET':
         form = UserForm()
-        context = {'form': form}
+        context = {'form': form,'company_name': company_name, 'background_color_index': background_color_index, 'title_name': title_name}
         r.hset(session_id,'count_of_fails_form', 0)
         r.hset(session_id, 'created_at', datetime.now().strftime('%d.%m.%y %H:%M'))
         r.expire(session_id,redis_ttl)
@@ -49,7 +49,7 @@ def index(request):
         else:
             r.hincrby(session_id, 'count_of_fails_form', 1)
             if int(r.hget(session_id, 'count_of_fails_form').decode()) < count_of_fails_form_threshold:
-                context = {'form': form}
+                context = {'form': form, 'company_name': company_name, 'background_color_index': background_color_index, 'title_name': title_name}
                 r.close()
                 return render(request, 'index.html', context)
             else:
@@ -57,40 +57,48 @@ def index(request):
                 r.delete(session_id)
                 r.close()
                 return HttpResponseForbidden()
+
     
 def domain_choice(request):
     if search('your_url',request.META.get('HTTP_REFERER')):
         submitbutton = request.POST.get("submit")
-        domain = ''
+        d = ''
         form = DomainForm(request.POST or None)
         if form.is_valid():
-            domain = form.cleaned_data.get("domain")
+            d = form.cleaned_data.get("domain")
             username = request.session.get('data', None)['username']
-            context = {'form': form, 'submitbutton': submitbutton}
-            if domain == 'your_domain':
-                check_ldap_user.ldap_connect(ad_server=var_your_domain['ad_server'],admin_username=var_your_domain['admin_username'],admin_password=var_your_domain['admin_password'])
-                check_username = check_ldap_user.check_user(username=username, domain=var_your_domain)
+            context = {'form': form, 'submitbutton': submitbutton, 'company_name': company_name, 'background_color_domain_choice': background_color_domain_choice}
+            ###print(f"d:{d}, username:{username}, context:{context}")
+            if d:
+                ###print("Enter to if")
+                domain_data = domain.objects.get(domain_name=d)
+                print(f"это id домена: {domain_data.id}")
+                ###print(f"domain_data: {domain_data}, type: {type(domain_data)}, ad_server: {domain_data.ad_server},admin_username:{domain_data.admin_username},admin_password:{domain_data.admin_password}")
+                check_ldap_user.ldap_connect(ad_server=domain_data.ad_server,admin_username=domain_data.admin_username,admin_password=domain_data.admin_password)
+                print("Connected to LDAP")
+                print(f"username={username}, search_filter={domain_data.search_filter}, base_dn={domain_data.base_dn}, retrieve_attributes={domain_data.retrieve_attributes.split(',')}")
+                check_username = check_ldap_user.check_user(username=username, search_filter=domain_data.search_filter, base_dn=domain_data.base_dn, retrieve_attributes=domain_data.retrieve_attributes.split(','))
+                print("User checked")
                 check_ldap_user.close_ldap_session()
-                domain_var = var_your_domain
-            elif domain == 'your_domain':
-                check_ldap_user.ldap_connect(ad_server=var_volhovez_local['ad_server'],admin_username=var_volhovez_local['admin_username'],admin_password=var_volhovez_local['admin_password'])
-                check_username = check_ldap_user.check_user(username=username, domain=var_volhovez_local)
-                check_ldap_user.close_ldap_session()
-                domain_var = var_volhovez_local
+                ###print("Close connection to LDAP")
+                # domain_var = {'ad_server': domain_data.ad_server,
+                #    'base_dn': domain_data.base_dn, 'retrieve_attributes': domain_data.retrieve_attributes, 'search_filter': domain_data.search_filter }
+                ###print(f"domain_data: {domain_data}, check_username:{check_username}, domain_var:{domain_var}")
+            
             if check_username['status'] == 0:
             # User exist and ready for verify phone by sms code
-                context = {'form': form, 'submitbutton': submitbutton}
-                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': domain, 'domain_var': domain_var, 'redis_ttl_sms_code': redis_ttl_sms_code}
+                context = {'form': form, 'submitbutton': submitbutton, 'company_name': company_name, 'background_color_domain_choice': background_color_domain_choice}
+                request.session['data'] = {'username': username, "mobile": check_username['mobile'], "distinguishedName": check_username['distinguishedName'], "givenName": check_username['givenName'], 'domain': d, 'redis_ttl_sms_code': redis_ttl_sms_code}
                 return redirect("verify")
             elif check_username['status'] == 1:
                 error_message = 'Такого пользователя не существует. Обратитесь в отдел ИТ.'
-                context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+                context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message, 'company_name': company_name, 'background_color_domain_choice': background_color_domain_choice}
             elif check_username['status'] == 2:
                 error_message = 'Для того, чтобы верифицировать Вас, нехватает данных или они не верны. Обратитесь в отдел ИТ.'
-                context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+                context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message, 'company_name': company_name, 'background_color_domain_choice': background_color_domain_choice}
             return render(request, 'domain_choice.html', context)
         else:
-            context = {'form': form}
+            context = {'form': form, 'company_name': company_name, 'background_color_domain_choice': background_color_domain_choice}
             return render(request, 'domain_choice.html', context)
     else:
         request.session.flush()
@@ -117,30 +125,37 @@ class check_ldap_user(object):
             pass
 
     # Check user status in LDAP (enabled or disabled)
-    def check_user(username, domain):
+    def check_user(username, search_filter, base_dn, retrieve_attributes):
         search_scope = ldap.SCOPE_SUBTREE
-        search_filter = domain['search_filter'].format(username)
-        base_dn = domain['base_dn']
-        retrieve_attributes = domain['retrieve_attributes']
-        ldap_check_user = l.search_s(base_dn, search_scope, search_filter, retrieve_attributes)
-        if ldap_check_user:
-            # If user exists and enabled in LDAP
-            status = 0
-            try:
-                mobile = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
-                givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
-                distinguishedName = ldap_check_user[0][0]
-                result = {"mobile": mobile,"distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
-                return result
-            except Exception as ex:
-                status = 2
+        #search_filter = domain['search_filter'].format(username)
+        #base_dn = domain['base_dn']
+        #retrieve_attributes = domain['retrieve_attributes']
+        ###print(f"from check_user func. search_filter.format(username): {search_filter.format(username)},base_dn: {base_dn}, search_scope: {search_scope}, retrieve_attributes: {retrieve_attributes}")
+        ###print(f"l: {l}")
+        s_f = search_filter.format(username)
+        try:
+            ldap_check_user = l.search_s(base=base_dn, scope=search_scope, filterstr=search_filter.format(username), attrlist=retrieve_attributes)
+        except Exception as ex:
+            print(ex)
+        finally:
+            if ldap_check_user:
+                # If user exists and enabled in LDAP
+                status = 0
+                try:
+                    mobile = ldap_check_user[0][-1]['mobile'][0].decode('UTF-8')
+                    givenName = ldap_check_user[0][-1]['givenName'][0].decode('UTF-8')
+                    distinguishedName = ldap_check_user[0][0]
+                    result = {"mobile": mobile,"distinguishedName": distinguishedName, "givenName": givenName, 'status': status}
+                    return result
+                except Exception:
+                    status = 2
+                    result = {'status': status}
+                    return result
+            else:
+                # If user not exists or disabled in LDAP
+                status = 1
                 result = {'status': status}
                 return result
-        else:
-            # If user not exists or disabled in LDAP
-            status = 1
-            result = {'status': status}
-            return result
 
     # Close connection
     def close_ldap_session():
@@ -170,7 +185,7 @@ def verify_phone(request):
                 if form.is_valid():
                     code = form.cleaned_data.get("code")
                     if send_code and code and int(send_code) == int(code):
-                        context = {'form': form, 'submitbutton': submitbutton}
+                        context = {'form': form, 'submitbutton': submitbutton, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                         r.delete(session_id)
                         r.close()
                         return redirect("password")
@@ -180,7 +195,7 @@ def verify_phone(request):
                             r.expire(session_id,redis_ttl_sms_code)
                         if int(r.hget(session_id, 'count_of_fails_code').decode()) < count_of_fails_code_threshold:
                             r.close()
-                            context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!', 'redis_ttl_sms_code': redis_ttl_sms_code}
+                            context = {'form': form, 'submitbutton': submitbutton, 'error_message': 'Вы ввели неверный код!', 'redis_ttl_sms_code': redis_ttl_sms_code, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                             return render(request, 'verify_phone.html', context)
                         else:
                             request.session.flush()
@@ -190,7 +205,7 @@ def verify_phone(request):
                 else:
                     r.hincrby(session_id, 'count_of_fails_code', 1)
                     if int(r.hget(session_id, 'count_of_fails_code').decode()) < count_of_fails_code_threshold:
-                        context = {'form': form, 'submitbutton': submitbutton, 'redis_ttl_sms_code': redis_ttl_sms_code}
+                        context = {'form': form, 'submitbutton': submitbutton, 'redis_ttl_sms_code': redis_ttl_sms_code, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                         return render(request, 'verify_phone.html', context)
                     else:
                         request.session.flush()
@@ -199,13 +214,14 @@ def verify_phone(request):
                         return HttpResponseForbidden()
             if 'retry_code' in request.POST:
                 send = send_code_from_form(request, session_id, r=r)
+                print(f"send_code: {send}")
                 if send == 200:
                     form = VerifyPhone()
-                    context = {'form': form, 'retry_code_message': 'Код отправлен повторно.', 'redis_ttl_sms_code': redis_ttl_sms_code}
+                    context = {'form': form, 'retry_code_message': 'Код отправлен повторно.', 'redis_ttl_sms_code': redis_ttl_sms_code, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                     return render(request, 'verify_phone.html', context)
                 else:
                     form = VerifyPhone()
-                    context = {'form': form, 'error_code_message': 'При отправке кода произошла ошибка. Попробуйте ещё раз', 'redis_ttl_sms_code': redis_ttl_sms_code}
+                    context = {'form': form, 'error_code_message': 'При отправке кода произошла ошибка. Попробуйте ещё раз', 'redis_ttl_sms_code': redis_ttl_sms_code, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                     return render(request, 'verify_phone.html', context)
         elif request.method == 'GET':
             # Check if code was sended
@@ -217,12 +233,13 @@ def verify_phone(request):
                 code_in_db_status = 1
             if code_in_db_status == 0:
                 form = VerifyPhone()
-                context = {'form': form, 'redis_ttl_sms_code': redis_ttl_sms_code}
+                context = {'form': form, 'redis_ttl_sms_code': redis_ttl_sms_code, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                 return render(request, 'verify_phone.html', context)
             else:
-                send_code_from_form(request, session_id, r=r)
+                send_status = send_code_from_form(request, session_id, r=r)
+                print(f"send_code: {send_status}")
                 form = VerifyPhone()
-                context = {'form': form, 'redis_ttl_sms_code': redis_ttl_sms_code}
+                context = {'form': form, 'redis_ttl_sms_code': redis_ttl_sms_code, 'company_name': company_name, 'background_color_verify_phone': background_color_verify_phone}
                 return render(request, 'verify_phone.html', context)
     else:
         request.session.flush()
@@ -262,39 +279,50 @@ def change_password(request):
             if form.is_valid():
                 if form.cleaned_data.get("new_password") != form.cleaned_data.get("confirm_new_password"):
                     error_message = 'Введенные пароли не совпадают!'
-                    context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+                    context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message, 'company_name': company_name, 'password_len': conditions['len'], 'background_color_change_password': background_color_change_password}
                     return render(request, 'change_password.html', context)
                 else:
+                    print(f"зашли в else:")
                     error_message_class = PasswordValidator()
-                    error_message = error_message_class.validate(password=form.cleaned_data.get("new_password"), username=data['username'],domain=data['domain'], conditions=conditions, model_user=user)                    
+                    print(f"error_message_class:{error_message_class}")
+                    error_message = error_message_class.validate(password=form.cleaned_data.get("new_password"), username=data['username'],domain_name=data['domain'], conditions=conditions, model_user=user)
+                    print(f"error_message: {error_message}")                    
                     if error_message:
-                        context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message}
+                        context = {'form': form, 'submitbutton': submitbutton, 'error_message': error_message, 'company_name': company_name, 'password_len': conditions['len'], 'background_color_change_password': background_color_change_password}
+                        request.session.flush()
                         return render(request, 'change_password.html', context)
                     else:
                         try:
+                            print(f"зашли в try")
+                            #Now, try perform the password update
+                            domain_data = domain.objects.get(domain_name=data['domain'])
+                            print(f"domain_data: {domain_data}")
+                            check_ldap_user.ldap_connect(ad_server=domain_data.ad_server,admin_username=domain_data.admin_username,admin_password=domain_data.admin_password)
+                            print(f"ldap connected")
+                            new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
+                            mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
+                            l.modify_s(request.session.get('data', None)['distinguishedName'], mod_list)
+                            print(f"password changed")
+                            check_ldap_user.close_ldap_session()
                             hash = hash_salt(form.cleaned_data.get("new_password"))
-                            user_data = user.objects.create(
+                            print(f"start use create in db")
+                            user.objects.create(
                                 username = data['username'],
                                 first_name = data['givenName'],
                                 phone = data['mobile'],
                                 status = 'Password changed',
                                 hash = hash['hash'],
                                 salt = hash['salt'],
-                                domain = data['domain'],
+                                domain_id = domain_data.id,
                             )
-                            #Now, try perform the password update
-                            check_ldap_user.ldap_connect(ad_server=data['domain_var']['ad_server'],admin_username=data['domain_var']['admin_username'],admin_password=data['domain_var']['admin_password'])
-                            new_pwd_utf16 = '"{0}"'.format(form.cleaned_data.get("new_password")).encode('utf-16-le')
-                            mod_list = [(ldap.MOD_REPLACE, "unicodePwd", new_pwd_utf16),]
-                            l.modify_s(request.session.get('data', None)['distinguishedName'], mod_list)
-                            check_ldap_user.close_ldap_session()
                             return redirect("success")
                         except Exception as ex:
+                            print(f"ex: {ex}")
                             request.session.flush()
                             return HttpResponseServerError("Упс..Что-то пошло не так...Сообщите об этом в отдел ИТ")
         elif request.method == 'GET':
             form = ChangePassword()
-            context = {'form': form}
+            context = {'form': form, 'company_name': company_name, 'password_len': conditions['len'], 'background_color_change_password': background_color_change_password}
             return render(request, 'change_password.html', context)
     else:
         request.session.flush()
@@ -313,7 +341,7 @@ def hash_unsalt(password, hash, salt, algoritm, iter, dklen):
         return {'err_code': 0}
 
 class PasswordValidator(object):
-    def validate(self, password, username, domain, conditions, model_user):
+    def validate(self, password, username, domain_name, conditions, model_user):
         if not findall(conditions['upper'], password):
             return "Пароль должен содержать заглавные латинские буквы!"
         elif not findall(conditions['lower'], password):
@@ -327,11 +355,16 @@ class PasswordValidator(object):
             sl = conditions['history']
             today_date = date.today().isoformat()
             # queryset for chache
-            model_user.objects.filter(username=username, domain=domain)
+            print(f"добрались в точку 0")
+            model_user.objects.filter(username=username, domain_id=domain.objects.get(domain_name=domain_name).id)
+            print(f"добрались в точку 0.1")
             # the same query
-            history_of_change = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[:sl]
-            on_delete_history = model_user.objects.filter(username=username).filter(domain=domain).order_by('-created_at')[sl-1:].values_list("id", flat=True)
-            today_changed = model_user.objects.filter(username=username, domain=domain, created_at__contains=today_date)
+            print(f"добрались в точку 1")
+            history_of_change = model_user.objects.filter(username=username).filter(domain_id=domain.objects.get(domain_name=domain_name).id).order_by('-created_at')[:sl]
+            print(f"добрались в точку 2")
+            on_delete_history = model_user.objects.filter(username=username).filter(domain_id=domain.objects.get(domain_name=domain_name).id).order_by('-created_at')[sl-1:].values_list("id", flat=True)
+            print(f"добрались в точку 3")
+            today_changed = model_user.objects.filter(username=username, domain_id=domain.objects.get(domain_name=domain_name).id, created_at__contains=today_date)
             if today_changed.count() >= conditions['change_per_day']:
                 return "Замечена подозрительная активность с участием вашего аккаунта. обратитесь в отдел ИТ для изменения пароля."
             for entry in history_of_change:
@@ -349,7 +382,7 @@ class PasswordValidator(object):
 
 def success(request):
     if search('your_url',request.META.get('HTTP_REFERER')):
-        context = {'givenName': request.session.get('data', None)['givenName']}
+        context = {'givenName': request.session.get('data', None)['givenName'], 'company_name': company_name, 'time_for_apply_password': dc_time_sync, 'background_color_success': background_color_success }
         request.session.flush()
         return render(request, 'success.html', context)
     else:

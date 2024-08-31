@@ -3,7 +3,7 @@
 {% load crispy_forms_tags %}
 
 {% block body %}
-    <body style="background-color: #2A4948;"></body>
+    <body style="background-color: {{ background_color_domain_choice }}"></body>
     {{ block.super }}
 {% endblock body %}
 {% block content %}

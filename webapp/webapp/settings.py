@@ -29,7 +29,7 @@ SECRET_KEY = secret_key_django
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-## Нужно исправить
+# URLs
 ALLOWED_HOSTS = [''your_site_name_here'']
 
 # Application definition
@@ -172,7 +172,6 @@ SESSION_REDIS = {
 
 # Cache time to live is 15 minutes.
 #CACHE_TTL = 60 * 4
-
 
 #### ONLY FOR DEBUG SQL QUERY
 # LOGGING = {

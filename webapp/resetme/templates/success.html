@@ -3,13 +3,13 @@
 {% load crispy_forms_tags %}
 
 {% block body %}
-    <body style="background-color: #27261D;;"></body>
+    <body style="background-color: {{ background_color_success }}"></body>
     {{ block.super }}
 {% endblock body %}
 
 {% block content %}
     <div class="text-on-site">
-        <p>Пароль успешно обновлен. Изменения будут применены в течении 5 минут.</p>
+        <p>Пароль успешно обновлен. Изменения будут применены в течении {{ time_for_apply_password }} минут.</p>
         <p>Удачного дня, {{ givenName }}!</p>
     </div>
 {% endblock content %}

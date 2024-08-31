@@ -43,7 +43,7 @@ Temporary Items
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-
+__init__.py
 # C extensions
 *.so
 
@@ -99,9 +99,10 @@ target/
 *.pyc
 __pycache__/
 local_settings.py
-
+migrations/*
 .env
 db.sqlite3
+.svg
 
 ## Collect static ###
 staticfiles/
