@@ -56,6 +56,7 @@ pip install -r requirements_pip --break-system-packages
 `ln -s /etc/nginx/sites-available/nginx_resetme /etc/nginx/sites-enabled/nginx_resetme`
 
 **Добавьте данные из файла `nginx.conf` в секцию http основного конфигурационного файла nginx**
+**В файле `/etc/nginx/sites-available/nginx_resetme` измените url сайта, укажите адрес локальной подсети для доступа к /admin**
 
   Создаем БД, пользователя и назначаем права доступа:
 
@@ -82,7 +83,7 @@ pip install -r requirements_pip --break-system-packages
 
 В проекте есть файлы vars.py и secret.py, которые хранят в себе переменные и логины/пароли.
 
-### secret.py
+### secret.py (в репозитории есть samples/secret_sample.py, который необходимо перенести на уровень выше и переименовать)
 
 - secret_key_django - ключ django сервера, который перенесён из settings.py
 - resetme_db_host = 'ip адрес хоста БД, например, localhost'
@@ -97,7 +98,7 @@ pip install -r requirements_pip --break-system-packages
 - sms_password = 'пароль'
 
   
-### vars.py
+### vars.py (в репозитории есть samples/vars_sample.py, который необходимо перенести на уровень выше и переименовать)
 
 Переменная `'your_url'` содержит полный url, по которому осуществляется переход на сайт. Она используется в коде, чтобы запретить прямой переход на страницы верификации, смены пароля и т.д. Также измените `ALLOWED_HOSTS` в `webapp/webapp/settings.py`
 
@@ -231,6 +232,7 @@ conditions = {'len': 8, 'upper': '[A-Z]', 'lower': '[a-z]', 'number': '[0-9]', '
 	- favicon.svg - миниатюра иконки на вкладке браузера (width="120" height="120")
 	- logo1.svg - логотип компании в верхнем левом углу (не более чем width="200px" height="200px")
 	- logo2.svg - логотип компании в нижнем левом углу (не более чем width="200px" height="200px")
+  - выполнить команду `python3 manage.py collectstatic`
 
 -  ### Зайдите по url адресу вашего сайта resetme в панель администратора (например, https://resetme.example.ru/admin). В разделе Resetme - Domains нажмите Add, чтобы добавить данные доменов. Их кол-во ничем не ограничено.
 
