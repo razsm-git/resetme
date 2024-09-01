@@ -1,5 +1,5 @@
 #change
-'your_url' = r'https://resetme.example.ru/resetme/'
+site_url = r'https://resetme.example.ru/resetme/'
 company_name = ''
 title_name = 'Страница сброса пароля'
 #background pages color
