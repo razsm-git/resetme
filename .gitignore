@@ -12,7 +12,7 @@
 *.vsix
 
 # Password
-secret*
+secret.py
 
 # Django
 ### OSX ###
@@ -99,10 +99,13 @@ target/
 *.pyc
 __pycache__/
 local_settings.py
-migrations/*
+migrations/
 .env
 db.sqlite3
 .svg
+..bfg-report/
 
 ## Collect static ###
 staticfiles/
+
+vars.py

@@ -30,7 +30,7 @@ SECRET_KEY = secret_key_django
 DEBUG = False
 
 # URLs
-ALLOWED_HOSTS = [''your_site_name_here'']
+ALLOWED_HOSTS = ['resetme.example.ru']
 
 # Application definition
 
