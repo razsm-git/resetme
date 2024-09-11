@@ -9,13 +9,14 @@
 
 **P.S. Для нормальной работы resetme, Вы должны иметь доменную учётную запись с правами на сброс паролей пользователей в AD. Не следует добавлять учётную запись в группу администраторов домена или Account Operators. Вместо этого можно делигировать права на сброс паролей для пользователей в определенном OU**
 
-  ## Подготовительные работы
+## Подготовительные работы
 
 ### Делегирование прав для учетной записи в Microsoft Windows:
-pass
-
+Внесите изменения в скрипт `delegate_permission.ps1`. Переменная `$ou` содержит OU, в котором находятся пользователи домена, которым сервис resetme будет сбрасывать пароли. В переменной `$group` укажите имя группы в домене, для которой нужно делегировать права на "сброс" паролей. 
+Запустите скрипт delegate_permission.ps1 (из под учетной записи с правами администратора домена)
+Добавьте пользователя(например, service_resetme) в группу, которую указали в переменной `$group`
+В дальнейшем пользователя из предыдушего шага, например, `service_resetme`, нужно будет указать при добавлении нового домена через web интерфейс администратора.
   
-
 ## Установка
 
 В качестве окружения lxc контейнер с образом Debian 11 bullseye (5.15.83-1)/Debian 12 bookworm (6.8.4-3). В других ОС и средах виртуализации/контейнеризации не тестировался.
@@ -49,37 +50,33 @@ pip install -r requirements_pip --break-system-packages
 
 Скопируйте их в соответствующие папки:
 
-`- cp /resetme/samples/gunicorn.* /etc/systemd/system/`
-`- cp /resetme/samples/nginx_resetme /etc/nginx/sites-available/nginx_resetme`
-`- cp /resetme/samples/redis.conf /etc/redis/redis.conf`
-`useradd -M -r -U -s /usr/sbin/nologin gunicorn`
-`chown -R www-data:gunicorn /var/log/gunicorn`
-`chmod -R g+w /var/log/gunicorn`
-`ln -s /etc/nginx/sites-available/nginx_resetme /etc/nginx/sites-enabled/nginx_resetme`
+	 cp /resetme/samples/gunicorn.* /etc/systemd/system/
+	 cp /resetme/samples/nginx_resetme /etc/nginx/sites-available/nginx_resetme
+	 cp /resetme/samples/redis.conf /etc/redis/redis.conf 
+	 useradd -M -r -U -s /usr/sbin/nologin gunicorn
+	 chown -R www-data:gunicorn /var/log/gunicorn
+	 chmod -R g+w /var/log/gunicorn
+	 ln -s /etc/nginx/sites-available/nginx_resetme /etc/nginx/sites-enabled/nginx_resetme
 
 **Добавьте данные из файла `nginx.conf` в секцию http основного конфигурационного файла nginx**
 **В файле `/etc/nginx/sites-available/nginx_resetme` измените url сайта, укажите адрес локальной подсети для доступа к /admin**
 
   Создаем БД, пользователя и назначаем права доступа:
 
-`su - postgres`
-`psql`
-`CREATE DATABASE resetme_db;`
-`CREATE USER resetme_user WITH PASSWORD 'your_password_here';`
-`ALTER ROLE resetme_user SET client_encoding TO 'utf8';`
-`ALTER ROLE resetme_user SET default_transaction_isolation TO 'read committed';`
-`ALTER ROLE resetme_user SET timezone TO 'UTC';`
-`GRANT ALL PRIVILEGES ON DATABASE resetme_db TO resetme_user;`
-`ALTER DATABASE resetme_db OWNER TO resetme_user;`
-`\q`
+	su - postgres
+	psql
+	CREATE DATABASE resetme_db;
+	CREATE USER resetme_user WITH PASSWORD 'your_password_here';
+	ALTER ROLE resetme_user SET client_encoding TO 'utf8';
+	ALTER ROLE resetme_user SET default_transaction_isolation TO 'read committed';
+	ALTER ROLE resetme_user SET timezone TO 'UTC';
+	GRANT ALL PRIVILEGES ON DATABASE resetme_db TO resetme_user;
+	ALTER DATABASE resetme_db OWNER TO resetme_user;
+	\q
 
-  
-  Добавляем в автозапуск и запускаем службы:
+Добавляем в автозапуск и запускаем службы:
 
-`systemctl daemon-reload && systemctl enable --now gunicorn.service gunicorn.socket nginx redis-server`
-
-  
-  
+	systemctl daemon-reload && systemctl enable --now gunicorn.service gunicorn.socket nginx redis-server
 
 ## Описание конфигурационных файлов
 
@@ -137,7 +134,7 @@ coding = 'utf-8'
 iter = 100000
 dklen = 128
 
-**P.S. при изменении значений на рабочей БД, необходимо вручную очистить таблицу "resetme_user" базы данных от всех значений, т.к. сервис не сможет проверить хэш.**
+**P.S. при изменении значений для "хэширования" и "соли" на уже "рабочей" БД, необходимо вручную очистить таблицу "resetme_user" базы данных от всех значений, т.к. сервис не сможет проверить хэш.**
 
 Следующая переменная, это словарь, в котором указаны критерии сложности пароля. Они проверяются функцией `re.findall`. Их количество жёстко задано, поэтому нельзя увеличивать/уменьшать количество ключей в словаре.
 
@@ -235,6 +232,9 @@ conditions = {'len': 8, 'upper': '[A-Z]', 'lower': '[a-z]', 'number': '[0-9]', '
 	- logo1.svg - логотип компании в верхнем левом углу (не более чем width="200px" height="200px")
 	- logo2.svg - логотип компании в нижнем левом углу (не более чем width="200px" height="200px")
   - выполнить команду `python3 manage.py collectstatic`
+
+-  ### Создайте администратора и проект в django
+	- `python manage.py createsuperuser`
 
 -  ### Зайдите по url адресу вашего сайта resetme в панель администратора (например, https://resetme.example.ru/admin). В разделе Resetme - Domains нажмите Add, чтобы добавить данные доменов. Их кол-во ничем не ограничено.
 

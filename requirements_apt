@@ -1,5 +1,5 @@
+sudo
 gunicorn
-git
 python3-psycopg2
 libldap-common
 python3-pip
