@@ -233,8 +233,11 @@ conditions = {'len': 8, 'upper': '[A-Z]', 'lower': '[a-z]', 'number': '[0-9]', '
 	- logo2.svg - логотип компании в нижнем левом углу (не более чем width="200px" height="200px")
   - выполнить команду `python3 manage.py collectstatic`
 
--  ### Создайте администратора и проект в django
-	- `python manage.py createsuperuser`
+-  ### Выполните миграции в БД
+	- `python3 /resetme/webapp/manage.py migrate --fake-initial`
+
+-  ### Создайте администратора в django
+	- `python3 /resetme/webapp/manage.py createsuperuser`
 
 -  ### Зайдите по url адресу вашего сайта resetme в панель администратора (например, https://resetme.example.ru/admin). В разделе Resetme - Domains нажмите Add, чтобы добавить данные доменов. Их кол-во ничем не ограничено.
 

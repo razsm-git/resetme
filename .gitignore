@@ -43,7 +43,6 @@ Temporary Items
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-__init__.py
 # C extensions
 *.so
 
@@ -99,13 +98,16 @@ target/
 *.pyc
 __pycache__/
 local_settings.py
-migrations/*
 .env
 db.sqlite3
-.svg
+favicon.svg
+logo1.svg
+logo2.svg
 ..bfg-report/
 
 ## Collect static ###
 staticfiles/*
 
 vars.py
+webapp/resetme/__init__.py
+webapp/webapp/__init__.py
