@@ -46,8 +46,8 @@ server {
 			limit_conn slimits 5;
 		}
 		location /admin {
-			# Allow only local network
-			allow 172.16.0.0/16;
+			# Only local network
+			allow 10.0.0.0/8;
 			# Denied other
 			deny all;
 		}

@@ -2,5 +2,6 @@ Django
 django-simple-captcha
 django-crispy-forms
 crispy-bootstrap4
-django_redis
+django-redis
 django-redis-cache
+django-redis-sessions

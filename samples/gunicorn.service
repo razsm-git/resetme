@@ -5,7 +5,6 @@ After=network.target
 
 [Service]
 Type=notify
-User=root
 # Path to directory with manage.py
 WorkingDirectory=/resetme/webapp
 ExecStart=/usr/bin/gunicorn --bind unix:/run/gunicorn.sock -c /resetme/gunicorn.conf.py
