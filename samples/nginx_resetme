@@ -46,6 +46,13 @@ server {
 			limit_conn slimits 5;
 		}
 		location /admin {
+			#include proxy_params;
+			proxy_pass http://unix:/run/gunicorn.sock;
+			proxy_set_header Host $http_host;
+			proxy_set_header X-Forwarded-Proto $scheme;
+			proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+			# Max allowed connections from same ip address
+			limit_conn slimits 5;
 			# Only local network
 			allow 10.0.0.0/8;
 			# Denied other
