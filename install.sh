@@ -109,7 +109,6 @@ db_pass=${passwords[db_pass]}
 $echo_path -e  "\n\033[33mEnter login for sms provider(at this moment only smsc.ru):\n"
 read -e -i ""
 sms_login=$REPLY
-# $echo_path -e  "\n\033[33mEnter password for sms provider(at this moment only smsc.ru):\n"
 #sms password
 enter_password sms_pass "sms provider(at this moment only smsc.ru)"
 sms_pass=${passwords[sms_pass]}
@@ -131,8 +130,7 @@ $echo_path -e "\n\033[37m"
 
 cd /tmp
 $apt_path update && $apt_path install git -y
-#git clone https://github.com/razsm-git/resetme.git
-$git_path clone git@github.com:razsm-git/resetme.git
+$git_path clone https://github.com/razsm-git/resetme.git
 if [ $? -eq 0 ]
 then
     cd resetme
@@ -219,19 +217,19 @@ _
     $systemctl_path restart redis-server gunicorn.service gunicorn.socket 2> /dev/null
     #remove temp
     $rm_path -rf $temp_dir/resetme/
+    cd $install_dir
+    #migrate to db
+    $python_path $install_dir/webapp/manage.py migrate --fake-initial
+    #collect static
+    $echo_path 'yes' | $python_path $install_dir/webapp/manage.py collectstatic
+    #create superuser
+    $echo_path -e "\n\033[32mLet's create a superuser for django:"
+    $python_path $install_dir/webapp/manage.py createsuperuser < /dev/tty
+    $echo_path -e "\033[42mSuccess!"
+    #return grey color for console
+    $echo_path -e "\033[0m"
+    $echo_path -e "\n\033[37m"
 else
     $echo_path -e "\033[0m\n\033[0m\033[31mCan't clone git repo!"
 fi
-cd $install_dir
-#migrate to db
-$python_path $install_dir/webapp/manage.py migrate --fake-initial
-#collect static
-$echo_path 'yes' | $python_path $install_dir/webapp/manage.py collectstatic
-#create superuser
-$echo_path -e "\n\033[32mLet's create a superuser for django:"
-$python_path $install_dir/webapp/manage.py createsuperuser < /dev/tty
-$echo_path -e "\033[42mSuccess!"
-#return grey color for console
-$echo_path -e "\033[0m"
-$echo_path -e "\n\033[37m"
 
